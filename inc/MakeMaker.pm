@@ -36,9 +36,8 @@ my $otherldflags = '';
 my $inc = '';
 my $ccflags = '';
 
-my @deps;
-my @srcs;
-my @objs = map { substr ($_, 0, -1) . 'o' } (@deps, @srcs);
+my @srcs = glob 'deps/libzmq/src/*.cpp';
+my @objs = map { substr ($_, 0, -3) . 'o' } (@srcs);
 
 sub MY::c_o {
 	my $out_switch = '-o ';
@@ -50,6 +49,9 @@ sub MY::c_o {
 	my $line = qq{
 .c\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
+
+.cpp\$(OBJ_EXT):
+	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
 };
 	return $line;
 }
