@@ -12,29 +12,164 @@ override _build_MakeFile_PL_template => sub {
 use strict;
 use warnings;
 use Config;
-use Getopt::Long;
-use File::Basename qw(basename dirname);
-
-use Devel::CheckLib;
 
 # compiler detection
 my $is_gcc = length($Config{gccversion});
 my $is_msvc = $Config{cc} eq 'cl' ? 1 : 0;
-my $is_sunpro = (length($Config{ccversion}) && !$is_msvc) ? 1 : 0;
 
 # os detection
 my $is_solaris = ($^O =~ /(sun|solaris)/i) ? 1 : 0;
 my $is_windows = ($^O =~ /MSWin32/i) ? 1 : 0;
 my $is_linux = ($^O =~ /linux/i) ? 1 : 0;
 my $is_osx = ($^O =~ /darwin/i) ? 1 : 0;
-my $is_gkfreebsd = ($^O =~ /gnukfreebsd/i) ? 1 : 0;
-my $is_netbsd = ($^O =~ /netbsd/i) ? 1 : 0;
+my $is_bsd = ($^O =~ /bsd/i) ? 1 : 0;
 
-my $def = '';
+my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -D_THREAD_SAFE';
 my $lib = '';
 my $otherldflags = '';
 my $inc = '';
 my $ccflags = '';
+
+if ($is_gcc)
+{
+	$lib .= ' -lstdc++ -lpthread';
+
+	if ($is_linux || $is_solaris)
+	{
+		$lib .= ' -lrt';
+	}
+}
+elsif ($is_windows)
+{
+	$def .= ' -D_WINSOCK_DEPRECATED_NO_WARNINGS';
+	$ccflags .= ' -EHsc';
+	$lib .= ' -lws2_32 -lrpcrt4 -liphlpapi msvcprt.lib';
+}
+
+# generate the platform.hpp file
+my @opts = (
+	'ZMQ_HAVE_SO_KEEPALIVE',
+);
+
+if ($is_osx || $is_bsd)
+{
+	push @opts,
+		'ZMQ_USE_KQUEUE';
+}
+elsif ($is_linux)
+{
+	push @opts,
+		'ZMQ_USE_EPOLL',
+		'ZMQ_USE_EPOLL_CLOEXEC',
+		'ZMQ_HAVE_EVENTFD',
+		'ZMQ_HAVE_EVENTFD_CLOEXEC',
+		'ZMQ_HAVE_SOCK_CLOEXEC';
+}
+elsif ($is_solaris)
+{
+	push @opts,
+		'ZMQ_USE_DEVPOLL';
+}
+else
+{
+	push @opts,
+		'ZMQ_USE_POLL 1';
+}
+
+if ($is_linux || $is_osx || $is_bsd)
+{
+	push @opts,
+		'ZMQ_HAVE_TCP_KEEPCNT',
+		'ZMQ_HAVE_TCP_KEEPIDLE',
+		'ZMQ_HAVE_TCP_KEEPINTVL',
+		'ZMQ_HAVE_TCP_KEEPALIVE';
+}
+
+if (!$is_windows)
+{
+	push @opts,
+		'HAVE_FORK',
+		'HAVE_MKDTEMP',
+		'ZMQ_HAVE_UIO',
+		'ZMQ_HAVE_IFADDRS';
+}
+else
+{
+	push @opts,
+		'ZMQ_HAVE_WINDOWS',
+}
+
+if ($is_solaris)
+{
+	push @opts,
+		'HAVE_GETHRTIME';
+}
+elsif (!$is_windows)
+{
+	push @opts,
+		'HAVE_CLOCK_GETTIME';
+}
+
+open my $fh, '>', 'platform.hpp' or
+	die "Could not open 'platform.hpp': $!";
+print $fh q{
+#ifndef __ZMQ_PLATFORM_HPP_INCLUDED__
+#define __ZMQ_PLATFORM_HPP_INCLUDED__
+
+};
+
+foreach my $opt (@opts)
+{
+	print $fh "#define $opt\n";
+}
+
+print $fh q{
+
+#if defined ANDROID
+  #define ZMQ_HAVE_ANDROID
+#endif
+
+#if defined __CYGWIN__
+  #define ZMQ_HAVE_CYGWIN
+#endif
+
+#if defined __MINGW32__
+  #define ZMQ_HAVE_MINGW32
+#endif
+
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__FreeBSD_kernel__)
+  #define ZMQ_HAVE_FREEBSD
+#endif
+
+#if defined __hpux
+  #define ZMQ_HAVE_HPUX
+#endif
+
+#if defined __linux__
+  #define ZMQ_HAVE_LINUX
+#endif
+
+#if defined __NetBSD__
+  #define ZMQ_HAVE_NETBSD
+#endif
+
+#if defined __OpenBSD__
+  #define ZMQ_HAVE_OPENBSD
+#endif
+
+#if defined __APPLE__
+  #define ZMQ_HAVE_OSX
+#endif
+
+#if defined(sun) || defined(__sun)
+  #define ZMQ_HAVE_SOLARIS
+#endif
+
+#endif
+};
+
+close $fh;
+
 
 my @srcs = glob 'deps/libzmq/src/*.cpp';
 my @objs = map { substr ($_, 0, -3) . 'o' } (@srcs);
@@ -77,6 +212,185 @@ $WriteMakefileArgs{dynamic_lib} = {
 	OTHERLDFLAGS => $otherldflags
 };
 
+my @constants = (qw(
+	ZMQ_PAIR
+	ZMQ_PUB
+	ZMQ_SUB
+	ZMQ_REQ
+	ZMQ_REP
+	ZMQ_DEALER
+	ZMQ_ROUTER
+	ZMQ_PULL
+	ZMQ_PUSH
+	ZMQ_XPUB
+	ZMQ_XSUB
+	ZMQ_STREAM
+
+	ZMQ_DONTWAIT
+	ZMQ_SNDMORE
+	ZMQ_MORE
+	ZMQ_SHARED
+
+	ZMQ_POLLIN
+	ZMQ_POLLOUT
+	ZMQ_POLLERR
+	ZMQ_POLLPRI
+
+	ZMQ_IO_THREADS
+	ZMQ_MAX_SOCKETS
+	ZMQ_SOCKET_LIMIT
+	ZMQ_THREAD_PRIORITY
+	ZMQ_THREAD_SCHED_POLICY
+	ZMQ_MAX_MSGSZ
+
+	ZMQ_EVENT_CONNECTED
+	ZMQ_EVENT_CONNECT_DELAYED
+	ZMQ_EVENT_CONNECT_RETRIED
+	ZMQ_EVENT_LISTENING
+	ZMQ_EVENT_BIND_FAILED
+	ZMQ_EVENT_ACCEPTED
+	ZMQ_EVENT_ACCEPT_FAILED
+	ZMQ_EVENT_CLOSED
+	ZMQ_EVENT_CLOSE_FAILED
+	ZMQ_EVENT_DISCONNECTED
+	ZMQ_EVENT_MONITOR_STOPPED
+	ZMQ_EVENT_ALL
+));
+
+my @errors = (qw(
+	ENOTSUP
+	EPROTONOSUPPORT
+	ENOBUFS
+	ENETDOWN
+	EADDRINUSE
+	EADDRNOTAVAIL
+	ECONNREFUSED
+	EINPROGRESS
+	ENOTSOCK
+	EMSGSIZE
+	EAFNOSUPPORT
+	ENETUNREACH
+	ECONNABORTED
+	ECONNRESET
+	ENOTCONN
+	ETIMEDOUT
+	EHOSTUNREACH
+	ENETRESET
+	EFSM
+	ENOCOMPATPROTO
+	ETERM
+	EMTHREAD
+));
+
+my @socket_options = (qw(
+	ZMQ_AFFINITY
+	ZMQ_IDENTITY
+	ZMQ_SUBSCRIBE
+	ZMQ_UNSUBSCRIBE
+	ZMQ_RATE
+	ZMQ_RECOVERY_IVL
+	ZMQ_SNDBUF
+	ZMQ_RCVBUF
+	ZMQ_RCVMORE
+	ZMQ_FD
+	ZMQ_EVENTS
+	ZMQ_TYPE
+	ZMQ_LINGER
+	ZMQ_RECONNECT_IVL
+	ZMQ_BACKLOG
+	ZMQ_RECONNECT_IVL_MAX
+	ZMQ_MAXMSGSIZE
+	ZMQ_SNDHWM
+	ZMQ_RCVHWM
+	ZMQ_MULTICAST_HOPS
+	ZMQ_RCVTIMEO
+	ZMQ_SNDTIMEO
+	ZMQ_LAST_ENDPOINT
+	ZMQ_ROUTER_MANDATORY
+	ZMQ_TCP_KEEPALIVE
+	ZMQ_TCP_KEEPALIVE_CNT
+	ZMQ_TCP_KEEPALIVE_IDLE
+	ZMQ_TCP_KEEPALIVE_INTVL
+	ZMQ_IMMEDIATE
+	ZMQ_XPUB_VERBOSE
+	ZMQ_ROUTER_RAW
+	ZMQ_IPV6
+	ZMQ_MECHANISM
+	ZMQ_PLAIN_SERVER
+	ZMQ_PLAIN_USERNAME
+	ZMQ_PLAIN_PASSWORD
+	ZMQ_CURVE_SERVER
+	ZMQ_CURVE_PUBLICKEY
+	ZMQ_CURVE_SECRETKEY
+	ZMQ_CURVE_SERVERKEY
+	ZMQ_PROBE_ROUTER
+	ZMQ_REQ_CORRELATE
+	ZMQ_REQ_RELAXED
+	ZMQ_CONFLATE
+	ZMQ_ZAP_DOMAIN
+	ZMQ_ROUTER_HANDOVER
+	ZMQ_TOS
+	ZMQ_CONNECT_RID
+	ZMQ_GSSAPI_SERVER
+	ZMQ_GSSAPI_PRINCIPAL
+	ZMQ_GSSAPI_SERVICE_PRINCIPAL
+	ZMQ_GSSAPI_PLAINTEXT
+	ZMQ_HANDSHAKE_IVL
+	ZMQ_SOCKS_PROXY
+	ZMQ_XPUB_NODROP
+	ZMQ_BLOCKY
+	ZMQ_XPUB_MANUAL
+	ZMQ_XPUB_WELCOME_MSG
+	ZMQ_STREAM_NOTIFY
+	ZMQ_INVERT_MATCHING
+	ZMQ_HEARTBEAT_IVL
+	ZMQ_HEARTBEAT_TTL
+	ZMQ_HEARTBEAT_TIMEOUT
+	ZMQ_XPUB_VERBOSER
+	ZMQ_CONNECT_TIMEOUT
+	ZMQ_TCP_MAXRT
+	ZMQ_THREAD_SAFE
+	ZMQ_MULTICAST_MAXTPDU
+	ZMQ_VMCI_BUFFER_SIZE
+	ZMQ_VMCI_BUFFER_MIN_SIZE
+	ZMQ_VMCI_BUFFER_MAX_SIZE
+	ZMQ_VMCI_CONNECT_TIMEOUT
+	ZMQ_USE_FD
+));
+
+ExtUtils::Constant::WriteConstants
+(
+	NAME         => 'ZMQ::Raw',
+	NAMES        => [@constants],
+	DEFAULT_TYPE => 'IV',
+	C_FILE       => 'const-c-constant.inc',
+	XS_FILE      => 'const-xs-constant.inc',
+	XS_SUBNAME   => '_constant',
+	C_SUBNAME    => '_c_constant',
+);
+
+ExtUtils::Constant::WriteConstants
+(
+	NAME         => 'ZMQ::Raw::Error',
+	NAMES        => [@errors],
+	DEFAULT_TYPE => 'IV',
+	C_FILE       => 'const-c-error.inc',
+	XS_FILE      => 'const-xs-error.inc',
+	XS_SUBNAME   => '_constant',
+	C_SUBNAME    => '_error_constant',
+);
+
+ExtUtils::Constant::WriteConstants
+(
+	NAME         => 'ZMQ::Raw::Socket',
+	NAMES        => [@socket_options],
+	DEFAULT_TYPE => 'IV',
+	C_FILE       => 'const-c-socket_options.inc',
+	XS_FILE      => 'const-xs-socket_options.inc',
+	XS_SUBNAME   => '_constant',
+	C_SUBNAME    => '_socket_option',
+);
+
 unless (eval { ExtUtils::MakeMaker->VERSION(6.56) }) {
 	my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};
 	my $pp = $WriteMakefileArgs{PREREQ_PM};
@@ -94,22 +408,8 @@ unless (eval { ExtUtils::MakeMaker->VERSION(6.56) }) {
 delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
 	unless eval { ExtUtils::MakeMaker -> VERSION(6.52) };
 
-WriteMakefile(%WriteMakefileArgs);
-exit(0);
-
-sub usage {
-	print STDERR << "USAGE";
-Usage: perl $0 [options]
-
-Possible options are:
-  --with-openssl-include=<path>    Specify <path> for the root of the OpenSSL installation.
-  --with-openssl-libs=<libs>       Specify <libs> for the OpenSSL libraries.
-  --with-libssh2-include=<path>    Specify <path> for the root of the libssh2 installation.
-  --with-libssh2-lib=<lib>         Specify <lib> for the libssh2 library.
-USAGE
-
-	exit(1);
-}
+WriteMakefile (%WriteMakefileArgs);
+exit (0);
 
 {{ $share_dir_block[1] }}
 TEMPLATE
@@ -120,7 +420,7 @@ TEMPLATE
 override _build_WriteMakefile_args => sub {
 	return +{
 		%{ super() },
-		INC	    => '-I. -Ideps/libgit2 -Ideps/libgit2/src -Ideps/libgit2/include -Ideps/libgit2/deps/http-parser -Ideps/libgit2/deps/zlib',
+		INC	    => '-I. -Ideps/libzmq/include',
 		OBJECT	=> '$(O_FILES)',
 	}
 };
