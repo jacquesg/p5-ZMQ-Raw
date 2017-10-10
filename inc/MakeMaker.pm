@@ -90,9 +90,14 @@ if ($is_linux || $is_osx || $is_bsd)
 {
 	push @opts,
 		'ZMQ_HAVE_TCP_KEEPCNT',
-		'ZMQ_HAVE_TCP_KEEPIDLE',
 		'ZMQ_HAVE_TCP_KEEPINTVL',
 		'ZMQ_HAVE_TCP_KEEPALIVE';
+}
+
+if ($is_linux || $is_bsd)
+{
+	push @opts,
+		'ZMQ_HAVE_TCP_KEEPIDLE',
 }
 
 if (!$is_windows)
