@@ -1,0 +1,21 @@
+cache:
+ - C:\projects\sources
+
+install:
+ - if not exist "C:\projects\sources" mkdir "C:\projects\sources"
+ - cd C:\projects\sources
+
+ # Perl
+ - ps: Start-FileDownload http://strawberryperl.com/download/5.20.1.1/strawberry-perl-5.20.1.1-64bit.msi
+ - msiexec /i "C:\projects\sources\strawberry-perl-5.20.1.1-64bit.msi" /qn INSTALLDIR="C:\projects\perl"
+
+ - set PATH=C:\projects\perl\perl\bin;C:\projects\perl\perl\site\bin;C:\projects\perl\c\bin;%PATH%
+ - cd C:\projects\p5-ZMQ-Raw
+
+ - cpanm --notest Dist::Zilla Dist::Zilla::PluginBundle::Author::ALEXBIO Pod::Coverage::TrustPod
+ - cpanm --quiet --notest Devel::Cover::Report::Coveralls Dist::Zilla::App::Command::cover
+ - dzil authordeps --missing | cpanm --notest
+ - dzil listdeps --missing | cpanm --notest
+
+build_script:
+ - dzil test --all
