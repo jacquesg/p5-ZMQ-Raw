@@ -53,11 +53,16 @@ if ($is_gcc)
 		$lib .= ' -lrt';
 	}
 }
-elsif ($is_windows)
+
+if ($is_windows)
 {
-	$def .= ' -D_WINSOCK_DEPRECATED_NO_WARNINGS';
-	$ccflags .= ' -EHsc';
+	$def .= ' -D_WINSOCK_DEPRECATED_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS';
 	$lib .= ' -lws2_32 -lrpcrt4 -liphlpapi msvcprt.lib';
+
+	if ($is_msvc)
+	{
+		$ccflags .= ' -EHsc';
+	}
 }
 
 # generate the platform.hpp file
