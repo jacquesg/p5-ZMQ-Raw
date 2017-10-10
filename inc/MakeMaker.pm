@@ -37,6 +37,10 @@ if ($is_gcc)
 	{
 		$ld = 'c++';
 	}
+	elsif ($ld eq 'clang')
+	{
+		$ld = 'clang++';
+	}
 	elsif ($ld =~ /gcc/)
 	{
 		$ld =~ s/gcc/g++/;
