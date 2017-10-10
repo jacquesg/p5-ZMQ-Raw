@@ -30,6 +30,18 @@ sub AUTOLOAD
     goto &$AUTOLOAD;
 }
 
+=for HTML
+<a href="https://travis-ci.org/jacquesg/p5-ZMQ-Raw">
+	<img src="https://travis-ci.org/jacquesg/p5-ZMQ-Raw.svg?branch=master" alt="Build Status: Travis" align="right" />
+</a>
+<a href="https://ci.appveyor.com/project/jacquesg/p5-git-raw">
+	<img src="https://ci.appveyor.com/api/projects/status/ye43ehtq4tabkp32/branch/master?svg=true" alt="Build Status: AppVeyor" align="right" />
+</a>
+<a href="https://coveralls.io/github/jacquesg/p5-ZMQ-Raw">
+	<img src="https://coveralls.io/repos/github/jacquesg/p5-ZMQ-Raw/badge.svg?branch=master" alt="Coverage Status" align="right"/>
+</a>
+=cut
+
 =head1 NAME
 
 ZMQ::Raw - Perl bindings to the ZeroMQ library
