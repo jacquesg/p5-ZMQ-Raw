@@ -44,7 +44,32 @@ socket.
 Bind the socket to a local endpoint which accepts incoming connections. The
 endpoint is a string consisting of a transport:// followed by an address. The
 transport specifies the underlying protocol to use, whereas the address
-specifies the transport-specific address to bind to. TODO: list transports
+specifies the transport-specific address to bind to. The following transports
+are provided:
+
+=over 4
+
+=item * "tcp"
+
+unicast transport using TCP
+
+=item * "ipc"
+
+local inter-process communication transport
+
+=item * "inproc"
+
+local in-process (inter-thread) communication transport
+
+=item * "pgm,epgm"
+
+reliable multicast transport using PGM
+
+=item * "vmci"
+
+virtual machine communications interface (VMCI)
+
+=back
 
 =head2 unbind( $endpoint )
 
@@ -52,7 +77,7 @@ Unbind the socket from the endpoint.
 
 =head2 connect( $endpoint )
 
-Connect the socket to an endpoint which accepts incoming connections. TODO
+Connect the socket to an endpoint which accepts incoming connections.
 
 =head2 disconnect( $endpoint )
 
@@ -62,17 +87,30 @@ discarded.
 
 =head2 send( $buffer, $flags = 0)
 
-Queue a message created from C<$buffer>. TODO: list flags
+Queue a message created from C<$buffer>. C<$flags> defaults to C<0> but may
+be a combination of:
+
+=over 4
+
+=item * C<ZMQ::Raw-E<gt>ZMQ_DONTWAIT>
+
+unicast transport using TCP
+
+=item * C<ZMQ::Raw-E<gt>ZMQ_SNDMORE>
+
+local inter-process communication transport
+
+=back
 
 =head2 sendmsg( $msg, $flags = 0)
 
-Queue C<$msg> to be sent. TODO: list flags
+Queue C<$msg> to be sent.
 
 =head2 recv( $size = 1024*1024, $flags = 0)
 
 Receive a message. If C<$size> does not have enough space to store a full
 message, it will be truncated. If there are no messages available the method
-will block until the request can be satisfied. TODO: list flags
+will block until the request can be satisfied.
 
 =head2 recvmsg( $flags = 0)
 
