@@ -96,10 +96,6 @@ ZMQ::Raw - Perl bindings to the ZeroMQ library
 
 =head2 ZMQ_SNDMORE
 
-=head2 ZMQ_MORE
-
-=head2 ZMQ_SHARED
-
 =head2 ZMQ_POLLIN
 
 =head2 ZMQ_POLLOUT

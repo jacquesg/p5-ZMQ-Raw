@@ -1,5 +1,7 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Message
 
+INCLUDE: const-xs-message_options.inc
+
 SV *
 new (class)
 	SV *class
@@ -65,6 +67,21 @@ size (self)
 
 	CODE:
 		RETVAL = zmq_msg_size (ZMQ_SV_TO_PTR (Message, self));
+
+	OUTPUT: RETVAL
+
+int
+get (self, property)
+	SV *self
+	int property
+
+	PREINIT:
+		int rc;
+
+	CODE:
+		rc = zmq_msg_get (ZMQ_SV_TO_PTR (Message, self), property);
+		zmq_raw_check_error (rc);
+		RETVAL = rc;
 
 	OUTPUT: RETVAL
 

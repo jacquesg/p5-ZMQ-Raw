@@ -9,6 +9,8 @@ const-c-constant.inc
 const-xs-constant.inc
 const-c-error.inc
 const-xs-error.inc
+const-c-message_options.inc
+const-xs-message_options.inc
 const-c-socket_options.inc
 const-xs-socket_options.inc
 MYMETA.json.lock

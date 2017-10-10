@@ -2,7 +2,26 @@ package ZMQ::Raw::Message;
 
 use strict;
 use warnings;
+use Carp;
 use ZMQ::Raw;
+
+sub AUTOLOAD
+{
+    # This AUTOLOAD is used to 'autoload' constants from the constant()
+    # XS function.
+
+    my $constname;
+    our $AUTOLOAD;
+    ($constname = $AUTOLOAD) =~ s/.*:://;
+    croak "&ZMQ::Raw::Message::_constant not defined" if $constname eq '_constant';
+    my ($error, $val) = _constant ($constname);
+    if ($error) { croak $error; }
+    {
+        no strict 'refs';
+        *$AUTOLOAD = sub { $val };
+    }
+    goto &$AUTOLOAD;
+}
 
 =head1 NAME
 
@@ -30,6 +49,16 @@ parts to be received.
 =head2 size( )
 
 Get the size in bytes of the content of the messsage.
+
+=head2 get( $property )
+
+Get the value of C<$property>.
+
+=head1 CONSTANTS
+
+=head2 ZMQ_MORE
+
+=head2 ZMQ_SHARED
 
 =head1 AUTHOR
 

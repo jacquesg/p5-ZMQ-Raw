@@ -239,8 +239,6 @@ my @constants = (qw(
 
 	ZMQ_DONTWAIT
 	ZMQ_SNDMORE
-	ZMQ_MORE
-	ZMQ_SHARED
 
 	ZMQ_POLLIN
 	ZMQ_POLLOUT
@@ -369,6 +367,11 @@ my @socket_options = (qw(
 	ZMQ_USE_FD
 ));
 
+my @message_options = (qw(
+	ZMQ_MORE
+	ZMQ_SHARED
+));
+
 ExtUtils::Constant::WriteConstants
 (
 	NAME         => 'ZMQ::Raw',
@@ -400,6 +403,17 @@ ExtUtils::Constant::WriteConstants
 	XS_FILE      => 'const-xs-socket_options.inc',
 	XS_SUBNAME   => '_constant',
 	C_SUBNAME    => '_socket_option',
+);
+
+ExtUtils::Constant::WriteConstants
+(
+	NAME         => 'ZMQ::Raw::Message',
+	NAMES        => [@message_options],
+	DEFAULT_TYPE => 'IV',
+	C_FILE       => 'const-c-message_options.inc',
+	XS_FILE      => 'const-xs-message_options.inc',
+	XS_SUBNAME   => '_constant',
+	C_SUBNAME    => '_message_option',
 );
 
 unless (eval { ExtUtils::MakeMaker->VERSION(6.56) }) {

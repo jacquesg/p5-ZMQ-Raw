@@ -19,9 +19,6 @@ is 11, ZMQ::Raw->ZMQ_STREAM;
 is 1, ZMQ::Raw->ZMQ_DONTWAIT;
 is 2, ZMQ::Raw->ZMQ_SNDMORE;
 
-is 1, ZMQ::Raw->ZMQ_MORE;
-is 3, ZMQ::Raw->ZMQ_SHARED;
-
 is 1, ZMQ::Raw->ZMQ_POLLIN;
 is 2, ZMQ::Raw->ZMQ_POLLOUT;
 is 4, ZMQ::Raw->ZMQ_POLLERR;
