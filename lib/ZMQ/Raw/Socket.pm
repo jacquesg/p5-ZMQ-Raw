@@ -70,9 +70,9 @@ Receive a message. If C<$size> does not have enough space to store a full
 message, it will be truncated. If there are no messages available the method
 will block until the request can be satisfied. TODO: list flags
 
-=head2 recvmsg( $msg, $flags = 0)
+=head2 recvmsg( $flags = 0)
 
-Receive a message part and store it int C<$msg>.
+Receive a message part. Returns a L<C<ZMQ::Raw::Message>> object.
 
 =head2 setsockopt( $option, $value )
 

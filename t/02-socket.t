@@ -125,15 +125,13 @@ my $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
 $req->sendmsg ($msg);
 
-my $msg2 = ZMQ::Raw::Message->new;
-$rep->recvmsg ($msg2);
+my $msg2 = $rep->recvmsg();
 is $msg2->size, 5;
 is $msg2->more, 0;
 
 $rep->sendmsg ($msg2);
 
-$msg = ZMQ::Raw::Message->new;
-$req->recvmsg ($msg);
+$msg = $req->recvmsg();
 is $msg->size, 5;
 is $msg->data(), 'hello';
 
@@ -145,12 +143,11 @@ $req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
 $msg->data ('world');
 $req->sendmsg ($msg);
 
-$msg2 = ZMQ::Raw::Message->new;
-$rep->recvmsg ($msg2);
+$msg2 = $rep->recvmsg();
 is $msg2->more, 1;
 is $msg2->data(), 'hello';
 
-$rep->recvmsg ($msg2);
+$msg2 = $rep->recvmsg();
 is $msg2->more, 0;
 is $msg2->data(), 'world';
 

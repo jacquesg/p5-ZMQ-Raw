@@ -117,19 +117,28 @@ recv (self, size=6, flags=0)
 
 	OUTPUT: RETVAL
 
-void
-recvmsg (self, msg, flags=0)
+SV *
+recvmsg (self, flags=0)
 	SV *self
-	SV *msg
 	int flags
 
 	PREINIT:
 		int rc;
+		zmq_msg_t *msg;
 
 	CODE:
-		rc = zmq_recvmsg (ZMQ_SV_TO_PTR (Socket, self),
-			ZMQ_SV_TO_PTR (Message, msg), flags);
+		Newx (msg, 1, zmq_msg_t);
+
+		rc = zmq_msg_init (msg);
 		zmq_raw_check_error (rc);
+
+		ZMQ_NEW_OBJ (RETVAL, "ZMQ::Raw::Message", msg);
+
+		rc = zmq_recvmsg (ZMQ_SV_TO_PTR (Socket, self), msg,
+			flags);
+		zmq_raw_check_error (rc);
+
+	OUTPUT: RETVAL
 
 void
 setsockopt (self, option, value)
