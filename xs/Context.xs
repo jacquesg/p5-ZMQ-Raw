@@ -19,6 +19,19 @@ new (class)
 	OUTPUT: RETVAL
 
 void
+set (self, option, value)
+	SV *self
+	int option
+	int value
+
+	PREINIT:
+		int rc;
+
+	CODE:
+		rc = zmq_ctx_set (ZMQ_SV_TO_PTR (Context, self), option, value);
+		zmq_raw_check_error (rc);
+
+void
 shutdown (self)
 	SV *self
 

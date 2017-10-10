@@ -50,5 +50,7 @@ ok (ZMQ::Raw->ZMQ_EVENT_ALL);
 my $ctx = ZMQ::Raw::Context->new;
 isa_ok ($ctx, "ZMQ::Raw::Context");
 
+$ctx->set (ZMQ::Raw->ZMQ_MAX_SOCKETS, 1024);
+
 done_testing;
 

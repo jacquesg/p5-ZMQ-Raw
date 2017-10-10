@@ -18,6 +18,10 @@ A L<ZMQ::Raw::Context> represents a ZeroMQ context.
 
 Create a new ZeroMQ context.
 
+=head2 set( $option, $value )
+
+Set a ZeroMQ context option.
+
 =head2 shutdown( )
 
 Shutdown the ZeroMQ context. Context shutdown will cause any blocking operations
