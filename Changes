@@ -2,5 +2,7 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.01      2017-10-10 11:13:56+02:00 Africa/Johannesburg
+
  - Initial version
  - Update libzmq to 4.2.2
