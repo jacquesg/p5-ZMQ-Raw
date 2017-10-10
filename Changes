@@ -2,6 +2,12 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Documentation improvements
+ - Added Message methods:
+    + get()
+    + routing_id()
+ - Linux, FreeBSD, macOS, Solaris and Windows now supported
+
 0.02      2017-10-10 13:56:46+02:00 Africa/Johannesburg
 
  - Socket->recvmsg() now returns a Message object
