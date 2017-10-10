@@ -46,6 +46,26 @@ sub AUTOLOAD
 
 ZMQ::Raw - Perl bindings to the ZeroMQ library
 
+=head1 SYNOPSIS
+
+	use ZMQ::Raw;
+
+	my $ctx = ZMQ::Raw::Context->new;
+
+	my $responder = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REP);
+	$responder->bind ('tcp://*:5555');
+
+	my $requestor = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REQ);
+	$requestor->connect ('tcp://localhost:5555');
+
+	# prints: Request 'hello'
+	$requestor->send ('hello');
+	print "Request '", $responder->recv(), "'\n";
+
+	# prints: Response 'world'
+	$responder->send ('world');
+	print "Response '", $requestor->recv(), "'\n";
+
 =head1 CONSTANTS
 
 =head2 ZMQ_PAIR
