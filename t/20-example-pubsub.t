@@ -49,7 +49,7 @@ sub SynchronisedSubscriber
 
 # Start subscriber threads...
 my @threads;
-for (my $i = 0; $i < 10; ++$i)
+for (my $i = 0; $i < 2; ++$i)
 {
 	my $thr = threads->create ('SynchronisedSubscriber', $i);
 	push @threads, $thr;
