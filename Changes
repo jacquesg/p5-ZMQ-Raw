@@ -2,6 +2,13 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Socket->recvmsg() now returns a Message object
+ - Documentation improvements
+ - Added Context methods:
+    + set()
+ - Added Socket methods:
+    + unbind()
+
 0.01      2017-10-10 11:13:56+02:00 Africa/Johannesburg
 
  - Initial version
