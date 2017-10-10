@@ -107,6 +107,9 @@ ok (!eval {$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IPV6, "badtype")});
 
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IPV6, 0);
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_MAXMSGSIZE, 100);
+$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IDENTITY, "myid");
+
+ok (!eval {$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SERVER, "unsupported")});
 
 $rep->bind ('tcp://127.0.0.1:5555');
 $req->connect ('tcp://localhost:5555');
