@@ -29,10 +29,20 @@ my $lib = '';
 my $otherldflags = '';
 my $inc = '';
 my $ccflags = '';
+my $ld = $Config{ld};
 
 if ($is_gcc)
 {
-	$lib .= ' -lstdc++ -lpthread';
+	if ($ld eq 'cc')
+	{
+		$ld = 'c++';
+	}
+	elsif ($ld =~ /gcc/)
+	{
+		$ld =~ s/gcc/g++/;
+	}
+
+	$lib .= ' -lpthread';
 
 	if ($is_linux || $is_solaris)
 	{
@@ -206,6 +216,7 @@ $WriteMakefileArgs{MIN_PERL_VERSION}  = '5.8.8';
 $WriteMakefileArgs{DEFINE}  .= $def;
 $WriteMakefileArgs{LIBS}    .= $lib;
 $WriteMakefileArgs{INC}     .= $inc;
+$WriteMakefileArgs{LD}      .= $ld;
 $WriteMakefileArgs{CCFLAGS} .= $Config{ccflags} . ' '. $ccflags;
 $WriteMakefileArgs{OBJECT}  .= ' ' . join ' ', @objs;
 $WriteMakefileArgs{dynamic_lib} = {
