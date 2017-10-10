@@ -3,7 +3,6 @@
 use strict;
 use warnings;
 use Config;
-use Time::HiRes qw (usleep);
 use Test::More;
 use ZMQ::Raw;
 
@@ -29,7 +28,7 @@ sub SynchronisedSubscriber
 	$subscriber->connect ('tcp://localhost:5561');
 	$subscriber->setsockopt (ZMQ::Raw::Socket->ZMQ_SUBSCRIBE, "");
 
-	usleep (250*1000);
+	sleep 2;
 
 	my $syncservice = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REQ);
 	$syncservice->connect ('tcp://localhost:5562');
