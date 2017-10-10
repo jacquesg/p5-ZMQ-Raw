@@ -1,0 +1,6 @@
+Revision history for ZMQ-Raw
+
+{{$NEXT}}
+
+ - Initial version
+ - Update libzmq to 4.2.2
