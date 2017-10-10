@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.03      2017-10-10 18:16:04+02:00 Africa/Johannesburg
+
  - Documentation improvements
  - Added Message methods:
     + get()
