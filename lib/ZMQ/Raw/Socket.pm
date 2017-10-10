@@ -46,6 +46,10 @@ endpoint is a string consisting of a transport:// followed by an address. The
 transport specifies the underlying protocol to use, whereas the address
 specifies the transport-specific address to bind to. TODO: list transports
 
+=head2 unbind( $endpoint )
+
+Unbind the socket from the endpoint.
+
 =head2 connect( $endpoint )
 
 Connect the socket to an endpoint which accepts incoming connections. TODO

@@ -36,6 +36,18 @@ bind (self, endpoint)
 		zmq_raw_check_error (rc);
 
 void
+unbind (self, endpoint)
+	SV *self
+	const char *endpoint
+
+	PREINIT:
+		int rc;
+
+	CODE:
+		rc = zmq_unbind (ZMQ_SV_TO_PTR (Socket, self), endpoint);
+		zmq_raw_check_error (rc);
+
+void
 connect (self, endpoint)
 	SV *self
 	const char *endpoint

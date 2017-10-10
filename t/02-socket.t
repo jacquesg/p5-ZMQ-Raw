@@ -108,7 +108,7 @@ ok (!eval {$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IPV6, "badtype")});
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IPV6, 0);
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_MAXMSGSIZE, 100);
 
-$rep->bind ('tcp://*:5555');
+$rep->bind ('tcp://127.0.0.1:5555');
 $req->connect ('tcp://localhost:5555');
 
 # send/recv
@@ -152,6 +152,7 @@ is $msg2->more, 0;
 is $msg2->data(), 'world';
 
 $req->disconnect ('tcp://localhost:5555');
+$rep->unbind ('tcp://127.0.0.1:5555');
 
 done_testing;
 
