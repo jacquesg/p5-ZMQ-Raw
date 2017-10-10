@@ -70,6 +70,33 @@ size (self)
 
 	OUTPUT: RETVAL
 
+unsigned int
+routing_id(self, ...)
+	SV *self
+
+	PREINIT:
+		int rc;
+		uint32_t id;
+
+	CODE:
+		if (items > 1)
+		{
+			if (!SvIOK (ST (1)) || SvIV (ST (1)) < 0)
+				croak_usage ("routing_id should be unsigned");
+
+			id = SvIV (ST (1));
+			rc = zmq_msg_set_routing_id (ZMQ_SV_TO_PTR (Message, self), id);
+			zmq_raw_check_error (rc);
+		}
+
+		id = zmq_msg_routing_id (ZMQ_SV_TO_PTR (Message, self));
+		if (id == 0)
+			XSRETURN_UNDEF;
+
+		RETVAL = id;
+
+	OUTPUT: RETVAL
+
 int
 get (self, property)
 	SV *self

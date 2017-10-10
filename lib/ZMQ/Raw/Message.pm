@@ -50,6 +50,11 @@ parts to be received.
 
 Get the size in bytes of the content of the messsage.
 
+=head2 routing_id( [$id] )
+
+Get or set the routing id of the socket. To get a valid routing id, you must
+receive a message from a C<ZMQ_SERVER> socket.
+
 =head2 get( $property )
 
 Get the value of C<$property>.

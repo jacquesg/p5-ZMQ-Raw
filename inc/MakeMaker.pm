@@ -24,7 +24,7 @@ my $is_linux = ($^O =~ /linux/i) ? 1 : 0;
 my $is_osx = ($^O =~ /darwin/i) ? 1 : 0;
 my $is_bsd = ($^O =~ /bsd/i) ? 1 : 0;
 
-my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -D_THREAD_SAFE';
+my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -DZMQ_BUILD_DRAFT_API -D_THREAD_SAFE';
 my $lib = '';
 my $otherldflags = '';
 my $inc = '';
