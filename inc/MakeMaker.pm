@@ -26,6 +26,7 @@ my $is_bsd = ($^O =~ /bsd/i) ? 1 : 0;
 my $is_gkfreebsd = ($^O =~ /gnukfreebsd/i) ? 1 : 0;
 
 my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -DZMQ_BUILD_DRAFT_API -D_THREAD_SAFE';
+
 my $lib = '';
 my $otherldflags = '';
 my $inc = '';
@@ -69,6 +70,8 @@ if ($is_windows)
 # generate the platform.hpp file
 my @opts = (
 	'ZMQ_HAVE_SO_KEEPALIVE',
+	'ZMQ_HAVE_CURVE',
+	'ZMQ_USE_TWEETNACL',
 );
 
 if ($is_osx || $is_bsd)
@@ -201,8 +204,11 @@ print $fh q{
 close $fh;
 
 
-my @srcs = glob 'deps/libzmq/src/*.cpp';
-my @objs = map { substr ($_, 0, -3) . 'o' } (@srcs);
+my @cpp_srcs = glob 'deps/libzmq/src/*.cpp';
+my @cpp_objs = map { substr ($_, 0, -3) . 'o' } (@cpp_srcs);
+
+my @c_srcs = glob 'deps/libzmq/src/*.c';
+my @c_objs = map { substr ($_, 0, -1) . 'o' } (@c_srcs);
 
 sub MY::c_o {
 	my $out_switch = '-o ';
@@ -238,7 +244,7 @@ $WriteMakefileArgs{LIBS}    .= $lib;
 $WriteMakefileArgs{INC}     .= $inc;
 $WriteMakefileArgs{LD}      .= $ld;
 $WriteMakefileArgs{CCFLAGS} .= $Config{ccflags} . ' '. $ccflags;
-$WriteMakefileArgs{OBJECT}  .= ' ' . join ' ', @objs;
+$WriteMakefileArgs{OBJECT}  .= ' ' . join ' ', (@cpp_objs, @c_objs);
 $WriteMakefileArgs{dynamic_lib} = {
 	OTHERLDFLAGS => $otherldflags
 };
