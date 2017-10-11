@@ -2,6 +2,11 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Enabled tweetnacl
+ - Added support for GNU kFreeBSD
+ - Applied a performance regression patch: https://github.com/zeromq/libzmq/pull/2523
+ - Added feature detection method has()
+
 0.03      2017-10-10 18:16:04+02:00 Africa/Johannesburg
 
  - Documentation improvements
