@@ -14,6 +14,14 @@ if (!$Config{useithreads})
 	exit;
 }
 
+if (!$ENV{AUTHOR_TESTING})
+{
+	diag ("author testing, skipping");
+	ok (1);
+	done_testing;
+	exit;
+}
+
 require threads;
 
 sub SynchronisedSubscriber
