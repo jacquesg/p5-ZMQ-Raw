@@ -90,6 +90,11 @@ elsif ($is_solaris)
 	push @opts,
 		'ZMQ_USE_DEVPOLL';
 }
+elsif ($is_windows)
+{
+	push @opts,
+		'ZMQ_USE_SELECT';
+}
 else
 {
 	push @opts,
