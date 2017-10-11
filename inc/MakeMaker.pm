@@ -23,6 +23,7 @@ my $is_windows = ($^O =~ /MSWin32/i) ? 1 : 0;
 my $is_linux = ($^O =~ /linux/i) ? 1 : 0;
 my $is_osx = ($^O =~ /darwin/i) ? 1 : 0;
 my $is_bsd = ($^O =~ /bsd/i) ? 1 : 0;
+my $is_gkfreebsd = ($^O =~ /gnukfreebsd/i) ? 1 : 0;
 
 my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -DZMQ_BUILD_DRAFT_API -D_THREAD_SAFE';
 my $lib = '';
@@ -95,7 +96,7 @@ else
 		'ZMQ_USE_POLL 1';
 }
 
-if ($is_linux || $is_osx || $is_bsd)
+if (($is_linux || $is_osx || $is_bsd) && !$is_gkfreebsd)
 {
 	push @opts,
 		'ZMQ_HAVE_TCP_KEEPCNT',
@@ -103,7 +104,7 @@ if ($is_linux || $is_osx || $is_bsd)
 		'ZMQ_HAVE_TCP_KEEPALIVE';
 }
 
-if ($is_linux || $is_bsd)
+if (($is_linux || $is_bsd) && !$is_gkfreebsd)
 {
 	push @opts,
 		'ZMQ_HAVE_TCP_KEEPIDLE',
