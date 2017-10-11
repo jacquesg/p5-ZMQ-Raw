@@ -66,6 +66,12 @@ ZMQ::Raw - Perl bindings to the ZeroMQ library
 	$responder->send ('world');
 	print "Response '", $requestor->recv(), "'\n";
 
+=head1 METHODS
+
+=head2 has( $feature )
+
+Check if C<$feature> is available.
+
 =head1 CONSTANTS
 
 =head2 ZMQ_PAIR
@@ -139,6 +145,20 @@ ZMQ::Raw - Perl bindings to the ZeroMQ library
 =head2 ZMQ_EVENT_MONITOR_STOPPED
 
 =head2 ZMQ_EVENT_ALL
+
+=head2 FEATURE_IPC
+
+=head2 FEATURE_PGM
+
+=head2 FEATURE_TIPC
+
+=head2 FEATURE_NORM
+
+=head2 FEATURE_CURVE
+
+=head2 FEATURE_GSSAPI
+
+=head2 FEATURE_DRAFT
 
 =head1 AUTHOR
 
