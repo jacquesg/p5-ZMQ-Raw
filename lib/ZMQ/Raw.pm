@@ -12,6 +12,7 @@ use ZMQ::Raw::Curve;
 use ZMQ::Raw::Error;
 use ZMQ::Raw::Message;
 use ZMQ::Raw::Poller;
+use ZMQ::Raw::Proxy;
 use ZMQ::Raw::Socket;
 use ZMQ::Raw::Z85;
 

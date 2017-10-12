@@ -39,6 +39,11 @@ typedef struct
 	zmq_pollitem_t *items;
 } zmq_raw_poller;
 
+typedef struct
+{
+	int dummy;
+} zmq_raw_proxy;
+
 STATIC MGVTBL null_mg_vtbl =
 {
 	NULL, /* get */
@@ -287,6 +292,7 @@ INCLUDE: xs/Curve.xs
 INCLUDE: xs/Error.xs
 INCLUDE: xs/Message.xs
 INCLUDE: xs/Poller.xs
+INCLUDE: xs/Proxy.xs
 INCLUDE: xs/Socket.xs
 INCLUDE: xs/Z85.xs
 
