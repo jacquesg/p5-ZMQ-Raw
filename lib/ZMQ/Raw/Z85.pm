@@ -6,7 +6,7 @@ use ZMQ::Raw;
 
 =head1 NAME
 
-ZMQ::Raw::Z85 - ZeroMQ CURVE class
+ZMQ::Raw::Z85 - ZeroMQ Z85 methods
 
 =head1 DESCRIPTION
 

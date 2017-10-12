@@ -6,11 +6,11 @@ use ZMQ::Raw;
 
 =head1 NAME
 
-ZMQ::Raw::Curve - ZeroMQ CURVE class
+ZMQ::Raw::Curve - ZeroMQ CURVE methods
 
 =head1 DESCRIPTION
 
-ZeroMQ CURVE function.
+ZeroMQ CURVE methods.
 
 =head1 SYNOPSIS
 
