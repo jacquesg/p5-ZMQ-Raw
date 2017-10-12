@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use ZMQ::Raw;
 
+sub CLONE_SKIP { 1 }
+
 =head1 NAME
 
 ZMQ::Raw::Poller - ZeroMQ Poller class

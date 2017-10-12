@@ -5,6 +5,8 @@ use warnings;
 use Carp;
 use ZMQ::Raw;
 
+sub CLONE_SKIP { 1 }
+
 sub AUTOLOAD
 {
     # This AUTOLOAD is used to 'autoload' constants from the constant()

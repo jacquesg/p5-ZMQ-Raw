@@ -23,6 +23,8 @@ sub AUTOLOAD
     goto &$AUTOLOAD;
 }
 
+sub CLONE_SKIP { 1 }
+
 =head1 NAME
 
 ZMQ::Raw::Message - ZeroMQ Message class

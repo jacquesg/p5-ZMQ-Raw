@@ -10,6 +10,8 @@ use overload
 	'bool'     => sub { 1 },
 	'fallback' => 1;
 
+sub CLONE_SKIP { 1 }
+
 sub AUTOLOAD
 {
     # This AUTOLOAD is used to 'autoload' constants from the constant()

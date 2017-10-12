@@ -21,6 +21,12 @@
 
 typedef struct
 {
+	void *context;
+	void *counter;
+} zmq_raw_context;
+
+typedef struct
+{
 	int code;
 	SV *message;
 	const char *file;
@@ -212,8 +218,26 @@ STATIC void S_zmq_raw_check_error (int error, const char *file, int line)
 
 #define zmq_raw_check_error(e) S_zmq_raw_check_error(e, __FILE__, __LINE__)
 
+#define MY_CXT_KEY "ZMQ::Raw::_guts"
+typedef struct
+{
+	unsigned int count;
+	zmq_raw_context *contexts;
+} my_cxt_t;
+
+#define MAX_CONTEXT_COUNT 64
+static zmq_raw_context contexts[MAX_CONTEXT_COUNT];
+
+START_MY_CXT
 
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw
+
+BOOT:
+{
+	MY_CXT_INIT;
+	MY_CXT.count = 0;
+	MY_CXT.contexts = &contexts;
+}
 
 INCLUDE: const-xs-constant.inc
 

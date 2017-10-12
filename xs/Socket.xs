@@ -3,23 +3,23 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Socket
 INCLUDE: const-xs-socket_options.inc
 
 SV *
-new (class, ctx, type)
+new (class, context, type)
 	SV *class
-	SV *ctx
+	SV *context
 	int type
 
 	PREINIT:
 		void *sock = NULL;
+		zmq_raw_context *ctx;
 
 	CODE:
-		sock = zmq_socket (ZMQ_SV_TO_PTR (Context, ctx), type);
+		ctx = ZMQ_SV_TO_PTR (Context, context);
+		sock = zmq_socket (ctx->context, type);
 		if (sock == NULL)
-		{
 			zmq_raw_check_error (-1);
-		}
 
 		ZMQ_NEW_OBJ_WITH_MAGIC (RETVAL, SvPVbyte_nolen (class), sock,
-			SvRV (ctx));
+			SvRV (context));
 
 	OUTPUT: RETVAL
 
