@@ -27,6 +27,12 @@ typedef struct
 	unsigned int line;
 } zmq_raw_error;
 
+typedef struct
+{
+	AV *sockets;
+	zmq_pollitem_t *items;
+} zmq_raw_poller;
+
 STATIC MGVTBL null_mg_vtbl =
 {
 	NULL, /* get */
@@ -256,6 +262,7 @@ INCLUDE: xs/Context.xs
 INCLUDE: xs/Curve.xs
 INCLUDE: xs/Error.xs
 INCLUDE: xs/Message.xs
+INCLUDE: xs/Poller.xs
 INCLUDE: xs/Socket.xs
 INCLUDE: xs/Z85.xs
 
