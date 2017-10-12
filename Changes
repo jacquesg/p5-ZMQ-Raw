@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.04      2017-10-12 15:30:21+02:00 Africa/Johannesburg
+
  - Enabled tweetnacl
  - Added support for GNU kFreeBSD
  - Applied a performance regression patch: https://github.com/zeromq/libzmq/pull/2523
