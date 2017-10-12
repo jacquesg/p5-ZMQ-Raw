@@ -6,6 +6,21 @@ Revision history for ZMQ-Raw
  - Added support for GNU kFreeBSD
  - Applied a performance regression patch: https://github.com/zeromq/libzmq/pull/2523
  - Added feature detection method has()
+ - ZMQ::Raw::Context objects can now be used with interpreter threads
+ - Added Curve methods:
+    + keypair()
+    + public()
+ - Added Z85 methods:
+    + encode()
+    + decode()
+ - Added Poller methods:
+    + new()
+    + add()
+    + events()
+    + wait()
+ - Added Proxy methods:
+    + new()
+    + start()
 
 0.03      2017-10-10 18:16:04+02:00 Africa/Johannesburg
 
