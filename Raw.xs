@@ -253,6 +253,7 @@ has (class, option)
 		XSRETURN_NO;
 
 INCLUDE: xs/Context.xs
+INCLUDE: xs/Curve.xs
 INCLUDE: xs/Error.xs
 INCLUDE: xs/Message.xs
 INCLUDE: xs/Socket.xs
