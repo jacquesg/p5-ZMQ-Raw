@@ -257,4 +257,5 @@ INCLUDE: xs/Curve.xs
 INCLUDE: xs/Error.xs
 INCLUDE: xs/Message.xs
 INCLUDE: xs/Socket.xs
+INCLUDE: xs/Z85.xs
 
