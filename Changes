@@ -6,6 +6,7 @@ Revision history for ZMQ-Raw
  - Socket->recv() no longer accepts a size parameter
  - Socket->recv() and Socket->send() now return undef if the ZQM_DONTWAIT flag is
  used and the operation cannot be completed
+ - Documentation improvements
 
 0.04      2017-10-12 15:30:21+02:00 Africa/Johannesburg
 
