@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.05      2017-10-13 14:11:10+02:00 Africa/Johannesburg
+
  - CURVE socket options can now be set
  - Socket->recv() no longer accepts a size parameter
  - Socket->recv() and Socket->send() now return undef if the ZQM_DONTWAIT flag is
