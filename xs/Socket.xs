@@ -82,11 +82,15 @@ send (self, buffer, flags=0)
 		char *buf;
 		STRLEN len;
 
-	CODE:
+	PPCODE:
 		buf = SvPV (buffer, len);
 		rc = zmq_send (ZMQ_SV_TO_PTR (Socket, self),
 			buf, len, flags);
+		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+			XSRETURN_UNDEF;
+
 		zmq_raw_check_error (rc);
+		XSRETURN_YES;
 
 void
 sendmsg (self, msg, flags=0)
@@ -97,13 +101,17 @@ sendmsg (self, msg, flags=0)
 	PREINIT:
 		int rc;
 
-	CODE:
+	PPCODE:
 		rc = zmq_sendmsg (ZMQ_SV_TO_PTR (Socket, self),
 			ZMQ_SV_TO_PTR (Message, msg), flags);
+		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+			XSRETURN_UNDEF;
+
 		zmq_raw_check_error (rc);
+		XSRETURN_YES;
 
 SV *
-recv (self, size=6, flags=0)
+recv (self, size=16384, flags=0)
 	SV *self
 	int size
 	int flags
@@ -118,9 +126,13 @@ recv (self, size=6, flags=0)
 
 		rc = zmq_recv (ZMQ_SV_TO_PTR (Socket, self),
 			SvPVX (buffer), size, flags);
-		if (rc == -1)
+		if (rc < 0)
 		{
 			SvREFCNT_dec (buffer);
+
+			if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+				XSRETURN_UNDEF;
+
 			zmq_raw_check_error (rc);
 		}
 
@@ -148,6 +160,14 @@ recvmsg (self, flags=0)
 
 		rc = zmq_recvmsg (ZMQ_SV_TO_PTR (Socket, self), msg,
 			flags);
+		if (rc < 0)
+		{
+			zmq_msg_close (msg);
+			Safefree (msg);
+
+			if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+				XSRETURN_UNDEF;
+		}
 		zmq_raw_check_error (rc);
 
 	OUTPUT: RETVAL

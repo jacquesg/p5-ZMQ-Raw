@@ -109,15 +109,16 @@ $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IPV6, 0);
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_MAXMSGSIZE, 100);
 $rep->setsockopt (ZMQ::Raw::Socket->ZMQ_IDENTITY, "myid");
 
-ok (!eval {$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SERVER, "unsupported")});
-
 $rep->bind ('tcp://127.0.0.1:5555');
 $req->connect ('tcp://localhost:5555');
 
 # send/recv
 $req->send ('hello');
+ok (!defined ($req->recv (16, ZMQ::Raw->ZMQ_DONTWAIT)));
+
 my $result = $rep->recv();
 is $result, 'hello';
+
 
 $rep->send ('world');
 my $result2 = $req->recv();

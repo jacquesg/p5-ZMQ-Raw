@@ -96,11 +96,13 @@ be a combination of:
 
 =item * C<ZMQ::Raw-E<gt>ZMQ_DONTWAIT>
 
-unicast transport using TCP
+Perform the operation in non-blocking mode. This method will return
+C<undef> if the message cannot be sent immediately.
 
 =item * C<ZMQ::Raw-E<gt>ZMQ_SNDMORE>
 
-local inter-process communication transport
+The message is part of a multi-part message and further message parts are to
+follow.
 
 =back
 
@@ -112,7 +114,9 @@ Queue C<$msg> to be sent.
 
 Receive a message. If C<$size> does not have enough space to store a full
 message, it will be truncated. If there are no messages available the method
-will block until the request can be satisfied.
+will block until the request can be satisfied unless the C<ZMQ_DONTWAIT>
+flag is specified. If a message is not available and C<ZMQ_DONTWAIT> has been
+specified, this method will return C<undef> immediately.
 
 =head2 recvmsg( $flags = 0)
 
