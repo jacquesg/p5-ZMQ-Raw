@@ -207,6 +207,7 @@ setsockopt (self, option, value)
 			case ZMQ_XPUB_VERBOSER:
 			case ZMQ_XPUB_MANUAL:
 			case ZMQ_XPUB_NODROP:
+			case ZMQ_CURVE_SERVER:
 				{
 					int v;
 					if (!SvIOK (value))
@@ -244,6 +245,9 @@ setsockopt (self, option, value)
 			case ZMQ_XPUB_WELCOME_MSG:
 			case ZMQ_ZAP_DOMAIN:
 			case ZMQ_TCP_ACCEPT_FILTER:
+			case ZMQ_CURVE_SECRETKEY:
+			case ZMQ_CURVE_PUBLICKEY:
+			case ZMQ_CURVE_SERVERKEY:
 				{
 					STRLEN len;
 					char *buf;
