@@ -26,8 +26,8 @@ is $events, 0;
 $events = $poller->events ($rep);
 is $events, 0;
 
-$rep->bind ('tcp://127.0.0.1:5555');
-$req->connect ('tcp://localhost:5555');
+$rep->bind ('tcp://127.0.0.1:5557');
+$req->connect ('tcp://localhost:5557');
 $req->send ('hello');
 
 is 1, $poller->wait (100);
