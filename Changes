@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - CURVE socket options can now be set
+
 0.04      2017-10-12 15:30:21+02:00 Africa/Johannesburg
 
  - Enabled tweetnacl
