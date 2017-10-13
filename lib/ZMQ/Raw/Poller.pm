@@ -19,14 +19,22 @@ ZeroMQ Poller
 	use ZMQ::Raw;
 
 	my $poller = ZMQ::Raw::Poller->new();
-	$poller->add ($socket, ZMQ::Raw->ZMQ_POLLIN|ZMQ::Raw->ZMQ_POLLOUT);
+	$poller->add ($socket1, ZMQ::Raw->ZMQ_POLLIN);
+	$poller->add ($socket2, ZMQ::Raw->ZMQ_POLLIN);
 
+	# wait for up to 1000ms for an event
 	if ($poller->wait (1000))
 	{
-		my $events = $poller->events ($socket);
+		my $events = $poller->events ($socket1);
 		if ($events & ZMQ::Raw->ZMQ_POLLIN)
 		{
-			print "POLLIN event on $socket\n";
+			print "POLLIN event on socket1\n";
+		}
+
+		$events = $poller->events ($socket2);
+		if ($events & ZMQ::Raw->ZMQ_POLLIN)
+		{
+			print "POLLIN event on socket2\n";
 		}
 	}
 

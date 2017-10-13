@@ -16,7 +16,21 @@ ZeroMQ CURVE methods.
 
 	use ZMQ::Raw;
 
+	# client
 	my ($private, $public) = ZMQ::Raw::Curve->keypair();
+
+	my $req = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REQ);
+	$req->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SECRETKEY, $private);
+	$req->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_PUBLICKEY, $public);
+	$req->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SERVERKEY, $server_public);
+
+	# server
+	my $private = ZMQ::Raw::Curve->keypair();
+
+	my $rep = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REP);
+	$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SECRETKEY, $private);
+	$rep->setsockopt (ZMQ::Raw::Socket->ZMQ_CURVE_SERVER, 1);
+	$rep->bind ('tcp://*:5555');
 
 =head1 METHODS
 

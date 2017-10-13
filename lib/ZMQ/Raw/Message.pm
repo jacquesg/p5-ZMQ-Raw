@@ -33,6 +33,15 @@ ZMQ::Raw::Message - ZeroMQ Message class
 
 A L<ZMQ::Raw::Message> represents a ZeroMQ message.
 
+=head1 SYNOPSIS
+
+	use ZMQ::Raw;
+
+	my $msg = ZMQ::Raw::Message->new;
+	$msg->data ('hello');
+
+	$socket->sendmsg ($msg);
+
 =head1 METHODS
 
 =head2 new( )

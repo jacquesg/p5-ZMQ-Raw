@@ -17,6 +17,40 @@ ZeroMQ Proxy
 =head1 SYNOPSIS
 
 	use ZMQ::Raw;
+	use threads;
+
+	my $ctx = ZMQ::Raw::Context->new;
+
+	sub Proxy
+	{
+		my $frontend = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_ROUTER);
+		$frontend->bind ('tcp://*:5555');
+
+		my $backend = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_DEALER);
+		$backend->bind ('tcp://*:5556');
+
+		my $proxy = ZMQ::Raw::Proxy->new();
+		$proxy->start ($frontend, $backend);
+	}
+
+	# start the proxy in a different thread
+	my $proxy = threads->create ('Proxy');
+
+	my $req = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REQ);
+	$req->connect ('tcp://127.0.0.1:5555');
+
+	my $rep = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_REP);
+	$rep->connect ('tcp://127.0.0.1:5556');
+
+	# interact
+	$req->send ('hello');
+	$rep->recv();
+
+	$rep->send ('world');
+	$req->recv();
+
+	$ctx->shutdown();
+	$proxy->join();
 
 =head1 METHODS
 
