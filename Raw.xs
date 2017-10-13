@@ -226,7 +226,6 @@ STATIC void S_zmq_raw_check_error (int error, const char *file, int line)
 #define MY_CXT_KEY "ZMQ::Raw::_guts"
 typedef struct
 {
-	unsigned int count;
 	zmq_raw_context *contexts;
 } my_cxt_t;
 
@@ -240,8 +239,7 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw
 BOOT:
 {
 	MY_CXT_INIT;
-	MY_CXT.count = 0;
-	MY_CXT.contexts = &contexts;
+	MY_CXT.contexts = contexts;
 }
 
 INCLUDE: const-xs-constant.inc
