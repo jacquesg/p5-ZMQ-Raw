@@ -17,7 +17,7 @@ encode (class, decoded)
 		SvPOK_on (encoded);
 		SvCUR_set (encoded, (SvCUR (decoded)*4)/3);
 
-		if (zmq_z85_encode (SvPVX (encoded), SvPVX (decoded), SvCUR (decoded)) == NULL)
+		if (zmq_z85_encode (SvPVX (encoded), (const uint8_t *)SvPVX (decoded), SvCUR (decoded)) == NULL)
 			croak_usage ("encode failed");
 
 		SvREFCNT_inc (encoded);
@@ -41,7 +41,7 @@ decode (class, encoded)
 		SvPOK_on (decoded);
 		SvCUR_set (decoded, (SvCUR (encoded)*4)/5);
 
-		if (zmq_z85_decode (SvPVX (decoded), SvPVX (encoded)) == NULL)
+		if (zmq_z85_decode ((uint8_t *)SvPVX (decoded), SvPVX (encoded)) == NULL)
 			croak_usage ("decode failed");
 
 		SvREFCNT_inc (decoded);
