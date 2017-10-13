@@ -114,7 +114,7 @@ $req->connect ('tcp://localhost:5555');
 
 # send/recv
 $req->send ('hello');
-ok (!defined ($req->recv (16, ZMQ::Raw->ZMQ_DONTWAIT)));
+ok (!defined ($req->recv (ZMQ::Raw->ZMQ_DONTWAIT)));
 
 my $result = $rep->recv();
 is $result, 'hello';
@@ -138,6 +138,21 @@ $rep->sendmsg ($msg2);
 $msg = $req->recvmsg();
 is $msg->size, 5;
 is $msg->data(), 'hello';
+
+# sendmsg/recvmsg (combin)
+$msg = ZMQ::Raw::Message->new;
+$msg->data ('hello');
+$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+
+$msg->data ('world');
+$req->sendmsg ($msg);
+
+my $data = $rep->recv();
+is length ($data), 10;
+is $data, 'helloworld';
+
+$rep->send ('done');
+$req->recv();
 
 # sendmsg/recvmsg (multi msg)
 $msg = ZMQ::Raw::Message->new;

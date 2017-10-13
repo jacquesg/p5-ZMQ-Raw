@@ -110,13 +110,12 @@ follow.
 
 Queue C<$msg> to be sent.
 
-=head2 recv( $size = 1024*1024, $flags = 0)
+=head2 recv( $flags = 0)
 
-Receive a message. If C<$size> does not have enough space to store a full
-message, it will be truncated. If there are no messages available the method
-will block until the request can be satisfied unless the C<ZMQ_DONTWAIT>
-flag is specified. If a message is not available and C<ZMQ_DONTWAIT> has been
-specified, this method will return C<undef> immediately.
+Receive a message. If there are no messages available the method will block
+until the request can be satisfied unless the C<ZMQ_DONTWAIT> flag is specified.
+If a message is not available and C<ZMQ_DONTWAIT> has been specified, this
+method will return C<undef> immediately.
 
 =head2 recvmsg( $flags = 0)
 
