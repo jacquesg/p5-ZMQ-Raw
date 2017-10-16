@@ -143,8 +143,15 @@ is $msg->data(), 'hello';
 $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
 
+my $monitor = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_PAIR);
+$monitor->connect ('inproc://req.monitor');
+
 $req->close;
+$req->monitor ('inproc://req.monitor', ZMQ::Raw->ZMQ_EVENT_ALL);
 $req->connect ('tcp://localhost:5555');
+
+my $event = $monitor->recv();
+ok (length ($event) > 0);
 
 $req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
 

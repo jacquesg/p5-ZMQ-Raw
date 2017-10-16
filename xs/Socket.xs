@@ -352,6 +352,22 @@ close (self)
 			zmq_raw_check_error (-1);
 
 void
+monitor (self, endpoint, events)
+	SV *self
+	const char *endpoint
+	int events
+
+	PREINIT:
+		int rc;
+		zmq_raw_socket *sock;
+
+	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
+		rc = zmq_socket_monitor (sock->socket, endpoint, events);
+		zmq_raw_check_error (rc);
+
+void
 DESTROY(self)
 	SV *self
 

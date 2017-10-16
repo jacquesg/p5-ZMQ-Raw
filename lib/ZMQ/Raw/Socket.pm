@@ -97,6 +97,13 @@ be a combination of:
 Close the socket. Any outstanding messages physically received from the network
 but not yet received by the application will be discarded.
 
+=head2 monitor( $endpoint, $events)
+
+Track socket events. Each call to this method creates a C<ZMQ_PAIR> socket and
+binds that to the specified inproc C<$endpoint>. In order to collect socket
+events, you must create your own C<ZMQ_PAIR> socket and connect it to the
+C<$endpoint>.
+
 =over 4
 
 =item * C<ZMQ::Raw-E<gt>ZMQ_DONTWAIT>
