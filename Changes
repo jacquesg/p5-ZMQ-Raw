@@ -4,6 +4,7 @@ Revision history for ZMQ-Raw
 
  - Added Socket methods:
     + close()
+    + monitor()
  - Small memory-leak fix
 
 0.05      2017-10-13 14:11:10+02:00 Africa/Johannesburg
