@@ -334,6 +334,24 @@ setsockopt (self, option, value)
 		}
 
 void
+close (self)
+	SV *self
+
+	PREINIT:
+		int rc;
+		zmq_raw_socket *sock;
+
+	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
+		rc = zmq_close (sock->socket);
+		zmq_raw_check_error (rc);
+
+		sock->socket = zmq_socket (sock->context, sock->type);
+		if (sock->socket == NULL)
+			zmq_raw_check_error (-1);
+
+void
 DESTROY(self)
 	SV *self
 
@@ -343,7 +361,8 @@ DESTROY(self)
 
 	CODE:
 		sock = ZMQ_SV_TO_PTR (Socket, self);
-		zmq_close (sock->socket);
+		if (sock->socket)
+			zmq_close (sock->socket);
 		Safefree (sock);
 		SvREFCNT_dec (ZMQ_SV_TO_MAGIC (self));
 

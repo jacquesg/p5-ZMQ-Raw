@@ -92,6 +92,11 @@ discarded.
 Queue a message created from C<$buffer>. C<$flags> defaults to C<0> but may
 be a combination of:
 
+=head2 close( )
+
+Close the socket. Any outstanding messages physically received from the network
+but not yet received by the application will be discarded.
+
 =over 4
 
 =item * C<ZMQ::Raw-E<gt>ZMQ_DONTWAIT>

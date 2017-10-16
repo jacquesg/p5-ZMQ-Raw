@@ -142,6 +142,10 @@ is $msg->data(), 'hello';
 # sendmsg/recvmsg (combin)
 $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
+
+$req->close;
+$req->connect ('tcp://localhost:5555');
+
 $req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
 
 $msg->data ('world');
