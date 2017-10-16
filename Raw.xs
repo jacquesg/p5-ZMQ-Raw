@@ -35,6 +35,13 @@ typedef struct
 
 typedef struct
 {
+	void *socket;
+	void *context;
+	int type;
+} zmq_raw_socket;
+
+typedef struct
+{
 	AV *sockets;
 	zmq_pollitem_t *items;
 } zmq_raw_poller;

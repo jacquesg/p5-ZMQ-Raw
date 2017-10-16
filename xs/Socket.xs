@@ -9,14 +9,20 @@ new (class, context, type)
 	int type
 
 	PREINIT:
-		void *sock = NULL;
+		zmq_raw_socket *sock;
 		zmq_raw_context *ctx;
 
 	CODE:
 		ctx = ZMQ_SV_TO_PTR (Context, context);
-		sock = zmq_socket (ctx->context, type);
-		if (sock == NULL)
+		Newxz (sock, 1, zmq_raw_socket);
+		sock->type = type;
+		sock->socket = zmq_socket (ctx->context, type);
+		sock->context = ctx->context;
+		if (sock->socket == NULL)
+		{
+			Safefree (sock);
 			zmq_raw_check_error (-1);
+		}
 
 		ZMQ_NEW_OBJ_WITH_MAGIC (RETVAL, SvPVbyte_nolen (class), sock,
 			SvRV (context));
@@ -30,9 +36,11 @@ bind (self, endpoint)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
-		rc = zmq_bind (ZMQ_SV_TO_PTR (Socket, self), endpoint);
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_bind (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
 void
@@ -42,9 +50,11 @@ unbind (self, endpoint)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
-		rc = zmq_unbind (ZMQ_SV_TO_PTR (Socket, self), endpoint);
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_unbind (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
 void
@@ -54,9 +64,11 @@ connect (self, endpoint)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
-		rc = zmq_connect (ZMQ_SV_TO_PTR (Socket, self), endpoint);
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_connect (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
 void
@@ -66,9 +78,11 @@ disconnect (self, endpoint)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
-		rc = zmq_disconnect (ZMQ_SV_TO_PTR (Socket, self), endpoint);
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_disconnect (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
 void
@@ -79,9 +93,11 @@ send (self, buffer, flags=0)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	PPCODE:
-		rc = zmq_send (ZMQ_SV_TO_PTR (Socket, self),
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_send (sock->socket,
 			SvPVX (buffer), SvCUR (buffer), flags);
 		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
 			XSRETURN_UNDEF;
@@ -97,9 +113,11 @@ sendmsg (self, msg, flags=0)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	PPCODE:
-		rc = zmq_sendmsg (ZMQ_SV_TO_PTR (Socket, self),
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		rc = zmq_sendmsg (sock->socket,
 			ZMQ_SV_TO_PTR (Message, msg), flags);
 		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
 			XSRETURN_UNDEF;
@@ -115,9 +133,14 @@ recv (self, flags=0)
 	PREINIT:
 		int rc;
 		zmq_msg_t *msg;
+		zmq_raw_socket *sock;
 
 	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
 		Newx (msg, 1, zmq_msg_t);
+		rc = zmq_msg_init (msg);
+		zmq_raw_check_error (rc);
 
 		SV *buffer = sv_2mortal (newSV (16));
 		SvPOK_on (buffer);
@@ -125,15 +148,14 @@ recv (self, flags=0)
 
 		do
 		{
-			rc = zmq_msg_init (msg);
-			zmq_raw_check_error (rc);
-
-			rc = zmq_recvmsg (ZMQ_SV_TO_PTR (Socket, self), msg,
+			rc = zmq_recvmsg (sock->socket, msg,
 				flags);
 
 			if (rc < 0)
 			{
 				zmq_msg_close (msg);
+				Safefree (msg);
+
 				if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
 					XSRETURN_UNDEF;
 
@@ -146,12 +168,15 @@ recv (self, flags=0)
 			if (rc < 0)
 			{
 				zmq_msg_close (msg);
+				Safefree (msg);
 				zmq_raw_check_error (rc);
 			}
 
-			zmq_msg_close (msg);
 		}
 		while (rc);
+
+		zmq_msg_close (msg);
+		Safefree (msg);
 
 		SvREFCNT_inc (buffer);
 		RETVAL = buffer;
@@ -166,16 +191,16 @@ recvmsg (self, flags=0)
 	PREINIT:
 		int rc;
 		zmq_msg_t *msg;
+		zmq_raw_socket *sock;
 
 	CODE:
-		Newx (msg, 1, zmq_msg_t);
+		sock = ZMQ_SV_TO_PTR (Socket, self);
 
+		Newx (msg, 1, zmq_msg_t);
 		rc = zmq_msg_init (msg);
 		zmq_raw_check_error (rc);
 
-		ZMQ_NEW_OBJ (RETVAL, "ZMQ::Raw::Message", msg);
-
-		rc = zmq_recvmsg (ZMQ_SV_TO_PTR (Socket, self), msg,
+		rc = zmq_recvmsg (sock->socket, msg,
 			flags);
 		if (rc < 0)
 		{
@@ -187,6 +212,8 @@ recvmsg (self, flags=0)
 		}
 		zmq_raw_check_error (rc);
 
+		ZMQ_NEW_OBJ (RETVAL, "ZMQ::Raw::Message", msg);
+
 	OUTPUT: RETVAL
 
 void
@@ -197,8 +224,11 @@ setsockopt (self, option, value)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
 		switch (option)
 		{
 			// int
@@ -251,7 +281,7 @@ setsockopt (self, option, value)
 						croak_usage ("Value is not an int");
 
 					v = SvIV (value);
-					rc = zmq_setsockopt (ZMQ_SV_TO_PTR (Socket, self), option,
+					rc = zmq_setsockopt (sock->socket, option,
 						&v, sizeof (v));
 					zmq_raw_check_error (rc);
 				}
@@ -265,7 +295,7 @@ setsockopt (self, option, value)
 						croak_usage ("Value is not an int");
 
 					v = SvIV (value);
-					rc = zmq_setsockopt (ZMQ_SV_TO_PTR (Socket, self), option,
+					rc = zmq_setsockopt (sock->socket, option,
 						&v, sizeof (v));
 					zmq_raw_check_error (rc);
 				}
@@ -293,7 +323,7 @@ setsockopt (self, option, value)
 						croak_usage ("Value is not a string");
 
 					buf = SvPV (value, len);
-					rc = zmq_setsockopt (ZMQ_SV_TO_PTR (Socket, self), option,
+					rc = zmq_setsockopt (sock->socket, option,
 						buf, len);
 					zmq_raw_check_error (rc);
 				}
@@ -309,7 +339,11 @@ DESTROY(self)
 
 	PREINIT:
 		int rc;
+		zmq_raw_socket *sock;
 
 	CODE:
-		rc = zmq_close (ZMQ_SV_TO_PTR (Socket, self));
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		zmq_close (sock->socket);
+		Safefree (sock);
 		SvREFCNT_dec (ZMQ_SV_TO_MAGIC (self));
+

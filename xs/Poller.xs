@@ -23,13 +23,15 @@ add (self, socket, events)
 
 	PREINIT:
 		zmq_raw_poller *poller = NULL;
+		zmq_raw_socket *sock;
 		zmq_pollitem_t i;
 		SSize_t size;
 
 	CODE:
 		poller = ZMQ_SV_TO_PTR (Poller, self);
+		sock = ZMQ_SV_TO_PTR (Socket, socket);
 
-		i.socket = ZMQ_SV_TO_PTR (Socket, socket);
+		i.socket = sock->socket;
 		i.events = events;
 		i.revents = 0;
 

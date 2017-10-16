@@ -19,8 +19,17 @@ start (self, frontend, backend, ...)
 	SV *frontend
 	SV *backend
 
+	PREINIT:
+		zmq_raw_socket *f, *b, *c = NULL, *s = NULL;
+
 	CODE:
-		zmq_proxy_steerable (ZMQ_SV_TO_PTR (Socket, frontend),
-			ZMQ_SV_TO_PTR (Socket, backend),
-			SvOK (ST (3)) ? ZMQ_SV_TO_PTR (Socket, ST (3)) : NULL,
-			SvOK (ST (4)) ? ZMQ_SV_TO_PTR (Socket, ST (4)) : NULL);
+		f = ZMQ_SV_TO_PTR (Socket, frontend);
+		b = ZMQ_SV_TO_PTR (Socket, backend);
+		if (SvOK (ST (3)))
+			c = ZMQ_SV_TO_PTR (Socket, ST (3));
+		if (SvOK (ST (4)))
+			s = ZMQ_SV_TO_PTR (Socket, ST (4));
+
+		zmq_proxy_steerable (f->socket, b->socket,
+			c ? c->socket : NULL,
+			s ? s->socket : NULL);
