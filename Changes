@@ -2,6 +2,10 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Added Socket methods:
+    + close()
+ - Small memory-leak fix
+
 0.05      2017-10-13 14:11:10+02:00 Africa/Johannesburg
 
  - CURVE socket options can now be set
