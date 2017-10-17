@@ -171,13 +171,30 @@ $msg->data ('hello');
 $req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
 
 $msg->data ('world');
+$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+
+$msg->data ('hello');
+$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+
+$msg->data ('world');
 $req->sendmsg ($msg);
 
 $msg2 = $rep->recvmsg();
 is $msg2->more, 1;
 is $msg2->data(), 'hello';
 
-$msg2 = $rep->recvmsg();
+my @msgs = $rep->recvmsg();
+is scalar (@msgs), 3;
+
+$msg2 = shift @msgs;
+is $msg2->more, 1;
+is $msg2->data(), 'world';
+
+$msg2 = shift @msgs;
+is $msg2->more, 1;
+is $msg2->data(), 'hello';
+
+$msg2 = shift @msgs;
 is $msg2->more, 0;
 is $msg2->data(), 'world';
 

@@ -189,32 +189,46 @@ recvmsg (self, flags=0)
 	int flags
 
 	PREINIT:
-		int rc;
+		int rc, ctx;
+		int count = 0, more = 1;
 		zmq_msg_t *msg;
 		zmq_raw_socket *sock;
+		SV *m;
 
-	CODE:
+	PPCODE:
+		ctx = GIMME_V;
+
 		sock = ZMQ_SV_TO_PTR (Socket, self);
 
-		Newx (msg, 1, zmq_msg_t);
-		rc = zmq_msg_init (msg);
-		zmq_raw_check_error (rc);
-
-		rc = zmq_recvmsg (sock->socket, msg,
-			flags);
-		if (rc < 0)
+		while (more)
 		{
-			zmq_msg_close (msg);
-			Safefree (msg);
+			Newx (msg, 1, zmq_msg_t);
+			rc = zmq_msg_init (msg);
+			zmq_raw_check_error (rc);
 
-			if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
-				XSRETURN_UNDEF;
+			rc = zmq_recvmsg (sock->socket, msg,
+				flags);
+			if (rc < 0)
+			{
+				zmq_msg_close (msg);
+				Safefree (msg);
+
+				if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+					break;
+			}
+			zmq_raw_check_error (rc);
+			++count;
+
+			ZMQ_NEW_OBJ (m, "ZMQ::Raw::Message", msg);
+			mXPUSHs (m);
+
+			more = zmq_msg_get (msg, ZMQ_MORE);
+
+			if (ctx != G_ARRAY)
+				more = 0;
 		}
-		zmq_raw_check_error (rc);
 
-		ZMQ_NEW_OBJ (RETVAL, "ZMQ::Raw::Message", msg);
-
-	OUTPUT: RETVAL
+		XSRETURN (count);
 
 void
 setsockopt (self, option, value)

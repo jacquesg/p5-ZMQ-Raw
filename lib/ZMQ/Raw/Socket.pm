@@ -33,6 +33,16 @@ ZMQ::Raw::Socket - ZeroMQ Socket class
 
 A L<ZMQ::Raw::Socket> represents a ZeroMQ socket.
 
+=head1 SYNOPSIS
+
+	use ZMQ::Raw;
+
+	# receive a single message-part
+	my $msg = $socket->recvmsg();
+
+	# receive all message parts
+	my @msgs = $socket->recvmsg();
+
 =head1 METHODS
 
 =head2 new( $context, $type )
@@ -131,7 +141,8 @@ method will return C<undef> immediately.
 
 =head2 recvmsg( $flags = 0)
 
-Receive a message part. Returns a L<C<ZMQ::Raw::Message>> object.
+Receive a message part or multiple messages parts if called in list context.
+Returns a L<C<ZMQ::Raw::Message>> object or an array of object.
 
 =head2 setsockopt( $option, $value )
 
