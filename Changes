@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.07      2017-10-17 14:54:55+02:00 Africa/Johannesburg
+
  - Socket->recvmsg() now returns all message-parts in list context
  - Socket->sendmsg() can now send an array of message-parts
 
