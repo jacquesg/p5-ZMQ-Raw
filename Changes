@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.06      2017-10-17 08:59:02+02:00 Africa/Johannesburg
+
  - Added Socket methods:
     + close()
     + monitor()
