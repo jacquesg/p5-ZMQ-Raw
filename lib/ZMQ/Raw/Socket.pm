@@ -128,9 +128,9 @@ follow.
 
 =back
 
-=head2 sendmsg( $msg, $flags = 0)
+=head2 sendmsg( @msgs, $flags = 0)
 
-Queue C<$msg> to be sent.
+Queue C<@msgs> to be sent.
 
 =head2 recv( $flags = 0)
 

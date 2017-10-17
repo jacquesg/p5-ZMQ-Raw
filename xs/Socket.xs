@@ -106,23 +106,54 @@ send (self, buffer, flags=0)
 		XSRETURN_YES;
 
 void
-sendmsg (self, msg, flags=0)
+sendmsg (self, ...)
 	SV *self
-	SV *msg
-	int flags
 
 	PREINIT:
-		int rc;
+		int rc, i;
+		int flags = 0, count = 0;
 		zmq_raw_socket *sock;
 
 	PPCODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
-		rc = zmq_sendmsg (sock->socket,
-			ZMQ_SV_TO_PTR (Message, msg), flags);
-		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
-			XSRETURN_UNDEF;
 
-		zmq_raw_check_error (rc);
+		if (!sv_isobject (ST (items-1)) && SvIOK (ST (items-1)))
+		{
+			if (items < 3)
+				croak_usage ("not enough parameters provided");
+
+			flags = SvIV (ST (items-1));
+			count = items-2;
+		}
+		else
+		{
+			if (items < 2)
+				croak_usage ("not enough parameters provided");
+			count = items-1;
+		}
+
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+		for (i = 0; i < items && count; ++i)
+		{
+			int extra = 0;
+			SV *item = ST (i+1);
+
+			if (--count > 0)
+				extra = ZMQ_SNDMORE;
+
+			if (sv_isobject (item) && sv_derived_from (item, "ZMQ::Raw::Message"))
+			{
+				rc = zmq_sendmsg (sock->socket, ZMQ_SV_TO_PTR (Message, item),
+					flags | extra);
+				if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+					XSRETURN_UNDEF;
+				zmq_raw_check_error (rc);
+			}
+			else
+			{
+				warn ("unexpected item in list");
+			}
+		}
+
 		XSRETURN_YES;
 
 SV *

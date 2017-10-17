@@ -166,24 +166,30 @@ $rep->send ('done');
 $req->recv();
 
 # sendmsg/recvmsg (multi msg)
+my @msgs;
 $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
-$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+push @msgs, $msg;
 
+$msg = ZMQ::Raw::Message->new;
 $msg->data ('world');
-$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+push @msgs, $msg;
 
+$msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
-$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+push @msgs, $msg;
 
+$msg = ZMQ::Raw::Message->new;
 $msg->data ('world');
-$req->sendmsg ($msg);
+push @msgs, $msg;
+
+$req->sendmsg (@msgs);
 
 $msg2 = $rep->recvmsg();
 is $msg2->more, 1;
 is $msg2->data(), 'hello';
 
-my @msgs = $rep->recvmsg();
+@msgs = $rep->recvmsg();
 is scalar (@msgs), 3;
 
 $msg2 = shift @msgs;
