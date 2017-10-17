@@ -48,6 +48,10 @@ A L<ZMQ::Raw::Message> represents a ZeroMQ message.
 
 Create a new empty ZeroMQ message.
 
+=head2 clone( )
+
+Create a copy of a ZeroMQ message.
+
 =head2 data ([$data])
 
 Retrieve or set the message data.
