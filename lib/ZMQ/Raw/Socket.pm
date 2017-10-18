@@ -130,7 +130,8 @@ follow.
 
 =head2 sendmsg( @msgs, $flags = 0)
 
-Queue C<@msgs> to be sent.
+Queue C<@msgs> to be sent. Each message in C<@msgs> is still valid after this
+call, that is, they may be reused.
 
 =head2 recv( $flags = 0)
 

@@ -142,10 +142,29 @@ sendmsg (self, ...)
 
 			if (sv_isobject (item) && sv_derived_from (item, "ZMQ::Raw::Message"))
 			{
-				rc = zmq_sendmsg (sock->socket, ZMQ_SV_TO_PTR (Message, item),
-					flags | extra);
-				if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
-					XSRETURN_UNDEF;
+				zmq_msg_t msg;
+				rc = zmq_msg_init (&msg);
+				zmq_raw_check_error (rc);
+
+				rc = zmq_msg_copy (&msg, ZMQ_SV_TO_PTR (Message, item));
+				if (rc < 0)
+				{
+					zmq_msg_close (&msg);
+					zmq_raw_check_error (rc);
+				}
+
+				rc = zmq_sendmsg (sock->socket, &msg, flags | extra);
+				if (rc < 0)
+				{
+					zmq_msg_close (&msg);
+					zmq_raw_check_error (rc);
+
+					if (zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
+						XSRETURN_UNDEF;
+					zmq_raw_check_error (rc);
+				}
+
+				rc = zmq_msg_close (&msg);
 				zmq_raw_check_error (rc);
 			}
 			else

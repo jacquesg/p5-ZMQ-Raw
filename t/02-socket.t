@@ -127,7 +127,10 @@ is $result2, 'world';
 # sendmsg/recvmsg (1 msg)
 my $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
+
+isnt $msg->size, 0;
 $req->sendmsg ($msg);
+isnt $msg->size, 0;
 
 my $msg2 = $rep->recvmsg();
 is $msg2->size, 5;
