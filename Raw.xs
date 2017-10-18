@@ -228,6 +228,11 @@ STATIC void S_zmq_raw_check_error (int error, const char *file, int line)
 	}
 }
 
+STATIC void zmq_raw_free (void *data, void *hint)
+{
+	Safefree (data);
+}
+
 #define zmq_raw_check_error(e) S_zmq_raw_check_error(e, __FILE__, __LINE__)
 
 #define MY_CXT_KEY "ZMQ::Raw::_guts"

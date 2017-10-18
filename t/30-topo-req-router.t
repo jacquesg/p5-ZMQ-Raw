@@ -30,7 +30,7 @@ isnt 0, $msgs[0]->size();
 is 0, $msgs[1]->size();
 isnt 0, $msgs[2]->size();
 
-$frontend->sendmsg (@msgs);
+$frontend->sendmsg ($msgs[0], '', $msgs[2]);
 
 my $out = $req->recv;
 is $out, 'hello';

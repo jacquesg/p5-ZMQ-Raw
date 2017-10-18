@@ -115,25 +115,37 @@ sendmsg (self, ...)
 		zmq_raw_socket *sock;
 
 	PPCODE:
+		if (items < 2)
+			croak_usage ("not enough parameters provided");
+		count = items-1;
 
 		if (!sv_isobject (ST (items-1)) && SvIOK (ST (items-1)))
 		{
-			if (items < 3)
-				croak_usage ("not enough parameters provided");
+			/* the last parameter looks like 'flags'. if all the preceding
+			 * parameters are not ZMQ::Raw::Message objects, it is not
+			 * 'flags'
+			 */
+			int is_flags = items-2 ? 1 : 0;
+			for (i = 0; i < items-2; ++i && is_flags)
+			{
+				SV *item = ST (i+1);
+				if (sv_isobject (item) && sv_derived_from (item, "ZMQ::Raw::Message"))
+					continue;
 
-			flags = SvIV (ST (items-1));
-			count = items-2;
-		}
-		else
-		{
-			if (items < 2)
-				croak_usage ("not enough parameters provided");
-			count = items-1;
+				is_flags = 0;
+			}
+
+			if (is_flags)
+			{
+				flags = SvIV (ST (items-1));
+				--count;
+			}
 		}
 
 		sock = ZMQ_SV_TO_PTR (Socket, self);
 		for (i = 0; i < items && count; ++i)
 		{
+			zmq_msg_t msg;
 			int extra = 0;
 			SV *item = ST (i+1);
 
@@ -142,7 +154,6 @@ sendmsg (self, ...)
 
 			if (sv_isobject (item) && sv_derived_from (item, "ZMQ::Raw::Message"))
 			{
-				zmq_msg_t msg;
 				rc = zmq_msg_init (&msg);
 				zmq_raw_check_error (rc);
 
@@ -152,7 +163,7 @@ sendmsg (self, ...)
 					zmq_msg_close (&msg);
 					zmq_raw_check_error (rc);
 				}
-
+	SENDMSG:
 				rc = zmq_sendmsg (sock->socket, &msg, flags | extra);
 				if (rc < 0)
 				{
@@ -169,7 +180,12 @@ sendmsg (self, ...)
 			}
 			else
 			{
-				warn ("unexpected item in list");
+				STRLEN size = SvCUR (item);
+				rc = zmq_msg_init_size (&msg, size);
+				zmq_raw_check_error (rc);
+
+				Copy (SvPVX (item), zmq_msg_data (&msg), size, char);
+				goto SENDMSG;
 			}
 		}
 

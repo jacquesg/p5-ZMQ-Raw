@@ -43,6 +43,17 @@ A L<ZMQ::Raw::Socket> represents a ZeroMQ socket.
 	# receive all message parts
 	my @msgs = $socket->recvmsg();
 
+	# send multiple message parts
+	$socket->sendmsg ('hello', 'world'); # flags cannot be used here
+
+	# or
+	my $msg1 = ZMQ::Raw::Message->new;
+	$msg1->data ('hello');
+
+	my $msg2 = ZMQ::Raw::Message->new;
+	$msg2->data ('world');
+	$socket->sendmsg ($msg1, $msgs2, 0); # flags can be used here
+
 =head1 METHODS
 
 =head2 new( $context, $type )
@@ -130,8 +141,11 @@ follow.
 
 =head2 sendmsg( @msgs, $flags = 0)
 
-Queue C<@msgs> to be sent. Each message in C<@msgs> is still valid after this
-call, that is, they may be reused.
+Queue C<@msgs> to be sent. Each message in C<@msgs> that is a L<C<ZMQ::Raw::Message>>
+is still valid after this call, that is, they may be reused. Each item in C<@msgs>
+may either be a L<C<ZMQ::Raw::Message>> object or a "normal" perl scalar. The
+C<$flags> parameter is only available if all items in C<@msgs> are L<C<ZMQ::Raw::Message>>
+objects. See the SYNOPSIS for usage examples.
 
 =head2 recv( $flags = 0)
 

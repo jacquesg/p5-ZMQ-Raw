@@ -157,13 +157,12 @@ my $event = $monitor->recv();
 ok (length ($event) > 0);
 
 $req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
-
-$msg->data ('world');
-$req->sendmsg ($msg);
+$req->sendmsg ($msg, $msg, ZMQ::Raw->ZMQ_SNDMORE);
+$req->sendmsg ('world');
 
 my $data = $rep->recv();
-is length ($data), 10;
-is $data, 'helloworld';
+is length ($data), 20;
+is $data, 'hellohellohelloworld';
 
 $rep->send ('done');
 $req->recv();
@@ -178,15 +177,7 @@ $msg = ZMQ::Raw::Message->new;
 $msg->data ('world');
 push @msgs, $msg;
 
-$msg = ZMQ::Raw::Message->new;
-$msg->data ('hello');
-push @msgs, $msg;
-
-$msg = ZMQ::Raw::Message->new;
-$msg->data ('world');
-push @msgs, $msg;
-
-$req->sendmsg (@msgs);
+$req->sendmsg (@msgs, 'hello', 'world');
 
 $msg2 = $rep->recvmsg();
 is $msg2->more, 1;
