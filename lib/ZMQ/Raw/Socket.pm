@@ -152,7 +152,9 @@ objects. See the SYNOPSIS for usage examples.
 Receive a message. If there are no messages available the method will block
 until the request can be satisfied unless the C<ZMQ_DONTWAIT> flag is specified.
 If a message is not available and C<ZMQ_DONTWAIT> has been specified, this
-method will return C<undef> immediately.
+method will return C<undef> immediately. If called in list context, this method
+will return each part of the message as a scalar item. In scalar context, each
+part of the message will be concatenated into a single scalar item.
 
 =head2 recvmsg( $flags = 0)
 

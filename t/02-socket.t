@@ -167,8 +167,23 @@ is $data, 'hellohellohelloworld';
 $rep->send ('done');
 $req->recv();
 
-# sendmsg/recvmsg (multi msg)
+$req->sendmsg ($msg, ZMQ::Raw->ZMQ_SNDMORE);
+$req->sendmsg ($msg, $msg, ZMQ::Raw->ZMQ_SNDMORE);
+$req->sendmsg ('world');
+
 my @msgs;
+@msgs = $rep->recv();
+is scalar (@msgs), 4;
+is $msgs[0], 'hello';
+is $msgs[1], 'hello';
+is $msgs[2], 'hello';
+is $msgs[3], 'world';
+@msgs = ();
+
+$rep->send ('done');
+$req->recv();
+
+# sendmsg/recvmsg (multi msg)
 $msg = ZMQ::Raw::Message->new;
 $msg->data ('hello');
 push @msgs, $msg;

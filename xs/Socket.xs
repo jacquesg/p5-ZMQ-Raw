@@ -190,17 +190,20 @@ sendmsg (self, ...)
 
 		XSRETURN_YES;
 
-SV *
+void
 recv (self, flags=0)
 	SV *self
 	int flags
 
 	PREINIT:
-		int rc;
+		int rc, ctx;
+		int count = 0, more = 1;
 		zmq_msg_t msg;
 		zmq_raw_socket *sock;
 
-	CODE:
+	PPCODE:
+		ctx = GIMME_V;
+
 		sock = ZMQ_SV_TO_PTR (Socket, self);
 
 		rc = zmq_msg_init (&msg);
@@ -227,21 +230,36 @@ recv (self, flags=0)
 
 			sv_catpvn (buffer, zmq_msg_data (&msg), zmq_msg_size (&msg));
 
-			rc = zmq_msg_get (&msg, ZMQ_MORE);
-			if (rc < 0)
-				zmq_msg_close (&msg);
-			zmq_raw_check_error (rc);
+			more = zmq_msg_get (&msg, ZMQ_MORE);
+
+			if (ctx == G_ARRAY)
+			{
+				++count;
+				XPUSHs (buffer);
+				buffer = NULL;
+
+				if (more)
+				{
+					buffer = sv_2mortal (newSV (16));
+					SvPOK_on (buffer);
+					SvCUR_set (buffer, 0);
+				}
+			}
 		}
-		while (rc);
+		while (more);
 
-		zmq_msg_close (&msg);
+		rc = zmq_msg_close (&msg);
+		zmq_raw_check_error (rc);
 
-		SvREFCNT_inc (buffer);
-		RETVAL = buffer;
+		if (buffer)
+		{
+			++count;
+			XPUSHs (buffer);
+		}
 
-	OUTPUT: RETVAL
+		XSRETURN (count);
 
-SV *
+void
 recvmsg (self, flags=0)
 	SV *self
 	int flags
