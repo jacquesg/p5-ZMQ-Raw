@@ -51,6 +51,38 @@ typedef struct
 	int dummy;
 } zmq_raw_proxy;
 
+
+STATIC PerlIO *zmq_get_socket_io (SV *sv)
+{
+	if (SvROK (sv))
+		sv = SvRV (sv);
+
+	if (SvTYPE (sv) == SVt_PVGV)
+	{
+		if (isGV_with_GP (sv))
+		{
+			GV *gv = MUTABLE_GV (sv);
+			IO *io = GvIO (gv);
+			if (io)
+				return IoIFP (io);
+		}
+	}
+
+	return NULL;
+}
+
+#ifdef _WIN32
+STATIC SOCKET zmq_get_native_socket (PerlIO *io)
+{
+	return _get_osfhandle (PerlIO_fileno (io));
+}
+#else
+STATIC int zmq_get_native_socket (PerlIO *io)
+{
+	return PerlIO_fileno (io);
+}
+#endif
+
 STATIC MGVTBL null_mg_vtbl =
 {
 	NULL, /* get */

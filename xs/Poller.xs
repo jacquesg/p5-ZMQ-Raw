@@ -26,14 +26,26 @@ add (self, socket, events)
 		zmq_raw_socket *sock;
 		zmq_pollitem_t i;
 		SSize_t size;
+		PerlIO *io;
 
 	CODE:
 		poller = ZMQ_SV_TO_PTR (Poller, self);
-		sock = ZMQ_SV_TO_PTR (Socket, socket);
 
-		i.socket = sock->socket;
 		i.events = events;
 		i.revents = 0;
+		i.fd = 0;
+		i.socket = NULL;
+
+		io = zmq_get_socket_io (socket);
+		if (io)
+		{
+			i.fd = zmq_get_native_socket (io);
+		}
+		else
+		{
+			sock = ZMQ_SV_TO_PTR (Socket, socket);
+			i.socket = sock->socket;
+		}
 
 		size = av_len (poller->sockets)+1;
 		Renew (poller->items, size+1, zmq_pollitem_t);
@@ -56,7 +68,7 @@ wait (self, timeout)
 		poller = ZMQ_SV_TO_PTR (Poller, self);
 
 		size = av_len (poller->sockets)+1;
-		rc = zmq_poll (poller->items, size, timeout);
+		rc = zmq_poll (poller->items, (int)size, timeout);
 		zmq_raw_check_error (rc);
 
 		for (i = 0; i < size; ++i)
@@ -101,7 +113,6 @@ DESTROY (self)
 
 	PREINIT:
 		zmq_raw_poller *poller;
-		SV *item;
 
 	CODE:
 		poller = ZMQ_SV_TO_PTR (Poller, self);
