@@ -202,13 +202,11 @@ STATIC void *zmq_sv_to_ptr (const char *type, SV *sv, const char *file, int line
 {
 	SV *full_type = sv_2mortal (newSVpvf ("ZMQ::Raw::%s", type));
 
-	if (sv_isobject (sv) && sv_derived_from (sv, SvPV_nolen(full_type)))
-		return INT2PTR (void *, SvIV ((SV *) SvRV (sv)));
-
-	croak_usage ("Argument is not of type %s @ (%s:%d)",
+	if (!(sv_isobject (sv) && sv_derived_from (sv, SvPV_nolen (full_type))))
+	croak_usage ("Argument is not of type %s @ (%s:%d)\n",
 		SvPV_nolen (full_type), file, line);
 
-	return NULL;
+	return INT2PTR (void *, SvIV ((SV *) SvRV (sv)));
 }
 
 #define ZMQ_SV_TO_PTR(type, sv) \
@@ -222,15 +220,10 @@ STATIC void S_zmq_raw_check_error (int error, const char *file, int line)
 		if (SvTRUE(ERRSV))
 			e->message = newSVpv (SvPVbyte_nolen (ERRSV), 0);
 		else
-			e->message = newSVpvf ("%s (errno: %d) @ (%s:%d)", zmq_strerror (zmq_errno()), zmq_errno(), file, line);
+			e->message = newSVpvf ("%s (errno: %d) @ (%s:%d)\n", zmq_strerror (zmq_errno()), zmq_errno(), file, line);
 
 		croak_error_obj (e);
 	}
-}
-
-STATIC void zmq_raw_free (void *data, void *hint)
-{
-	Safefree (data);
 }
 
 #define zmq_raw_check_error(e) S_zmq_raw_check_error(e, __FILE__, __LINE__)
