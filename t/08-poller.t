@@ -17,6 +17,16 @@ ok (!eval {$poller->add, 'bad', ZMQ::Raw->ZMQ_POLLIN});
 $poller->add ($req, ZMQ::Raw->ZMQ_POLLIN);
 $poller->add ($rep, ZMQ::Raw->ZMQ_POLLIN);
 
+is $poller->size(), 2;
+ok ($poller->remove ($req));
+is $poller->size(), 1;
+ok ($poller->remove ($rep));
+is $poller->size(), 0;
+ok (!$poller->remove ($rep));
+
+$poller->add ($req, ZMQ::Raw->ZMQ_POLLIN);
+$poller->add ($rep, ZMQ::Raw->ZMQ_POLLIN);
+
 is 0, $poller->wait (100);
 
 ok (defined ($poller->events ($req)));
@@ -70,6 +80,10 @@ is $events, ZMQ::Raw->ZMQ_POLLIN;
 
 recv ($tcp, my $buf, 16384, 0);
 is 0, $poller->wait (100);
+
+is $poller->size(), 1;
+$poller->remove ($tcp);
+is $poller->size(), 0;
 
 close $tcp;
 

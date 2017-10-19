@@ -55,6 +55,79 @@ add (self, socket, events)
 		av_push (poller->sockets, SvRV (socket));
 
 void
+remove(self, socket)
+	SV *self
+	SV *socket
+
+	PREINIT:
+		zmq_raw_poller *poller;
+		PerlIO *io;
+		SSize_t index, size;
+
+	CODE:
+		poller = ZMQ_SV_TO_PTR (Poller, self);
+		size = av_len (poller->sockets)+1;
+		io = zmq_get_socket_io (socket);
+
+		for (index = 0; index < size; ++index)
+		{
+			if (io)
+			{
+				if (poller->items[index].fd == zmq_get_native_socket (io))
+					break;
+			}
+			else
+			{
+				zmq_raw_socket *sock = ZMQ_SV_TO_PTR (Socket, socket);
+				if (poller->items[index].socket == sock->socket)
+					break;
+			}
+		}
+
+		if (index != size)
+		{
+			SSize_t i, count = size-index;
+			AV *tmp = newAV();
+
+			if (size > 1)
+				Move (&poller->items[index+1], &poller->items[index], count, zmq_pollitem_t);
+
+			for (i = 0; i < size; ++i)
+			{
+				SV *item;
+				if (i == index)
+					continue;
+
+				item = *av_fetch (poller->sockets, i, 0);
+				SvREFCNT_inc (item);
+				av_push (tmp, item);
+			}
+
+			av_undef (poller->sockets);
+			poller->sockets = tmp;
+
+			XSRETURN_YES;
+		}
+
+		XSRETURN_NO;
+
+SV *
+size (self)
+	SV *self
+
+	PREINIT:
+		zmq_raw_poller *poller;
+		SSize_t size;
+
+	CODE:
+		poller = ZMQ_SV_TO_PTR (Poller, self);
+		size = av_len (poller->sockets)+1;
+
+		RETVAL = newSViv ((IV)size);
+
+	OUTPUT: RETVAL
+
+void
 wait (self, timeout)
 	SV *self
 	long timeout
