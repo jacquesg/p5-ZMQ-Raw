@@ -3,6 +3,9 @@ Revision history for ZMQ-Raw
 {{$NEXT}}
 
  - Poller->add() now also accepts perl sockets
+ - Added Poller methods:
+    + remove()
+    + size()
 
 0.08      2017-10-18 10:59:58+02:00 Africa/Johannesburg
 
