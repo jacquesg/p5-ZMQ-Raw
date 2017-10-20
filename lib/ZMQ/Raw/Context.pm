@@ -6,7 +6,7 @@ use ZMQ::Raw;
 
 =head1 NAME
 
-ZMQ::Raw::Socket - ZeroMQ Context class
+ZMQ::Raw::Context - ZeroMQ Context class
 
 =head1 DESCRIPTION
 
