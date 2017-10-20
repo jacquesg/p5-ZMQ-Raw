@@ -27,7 +27,7 @@ ok (!$poller->remove ($rep));
 $poller->add ($req, ZMQ::Raw->ZMQ_POLLIN);
 $poller->add ($rep, ZMQ::Raw->ZMQ_POLLIN);
 
-is 0, $poller->wait (100);
+is 0, $poller->wait (1000);
 
 ok (defined ($poller->events ($req)));
 ok (defined ($poller->events ($rep)));
@@ -43,7 +43,7 @@ $rep->bind ('tcp://127.0.0.1:5557');
 $req->connect ('tcp://localhost:5557');
 $req->send ('hello');
 
-is 1, $poller->wait (100);
+is 1, $poller->wait (1000);
 $events = $poller->events ($req);
 is $events, 0;
 
@@ -53,16 +53,16 @@ is $events, ZMQ::Raw->ZMQ_POLLIN;
 $rep->recv();
 $rep->send ('world');
 
-is 1, $poller->wait (100);
+is 1, $poller->wait (1000);
 $events = $poller->events ($req);
 is $events, ZMQ::Raw->ZMQ_POLLIN;
 
 $events = $poller->events ($rep);
 is $events, 0;
 
-is 1, $poller->wait (100);
+is 1, $poller->wait (1000);
 $req->recv();
-is 0, $poller->wait (100);
+is 0, $poller->wait (1000);
 
 $poller = ZMQ::Raw::Poller->new;
 
@@ -70,16 +70,16 @@ socket (my $tcp, PF_INET, SOCK_STREAM, 0);
 ok ($tcp);
 
 $poller->add ($tcp, ZMQ::Raw->ZMQ_POLLIN);
-is 0, $poller->wait (100);
+is 0, $poller->wait (1000);
 
 ok (connect ($tcp, pack_sockaddr_in (5557, inet_aton ("127.0.0.1"))));
-is 1, $poller->wait (100);
+is 1, $poller->wait (1000);
 
 $events = $poller->events ($tcp);
 is $events, ZMQ::Raw->ZMQ_POLLIN;
 
 recv ($tcp, my $buf, 16384, 0);
-is 0, $poller->wait (100);
+is 0, $poller->wait (1000);
 
 is $poller->size(), 1;
 $poller->remove ($tcp);
