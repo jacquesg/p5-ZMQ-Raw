@@ -6,6 +6,10 @@
 
 #include <zmq.h>
 
+#ifndef MUTABLE_GV
+#define MUTABLE_GV(p) ((GV *)MUTABLE_PTR(p))
+#endif
+
 #define FEATURE_IPC      1
 #define FEATURE_PGM      2
 #define FEATURE_TIPC     3
