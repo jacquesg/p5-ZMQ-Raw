@@ -1,8 +1,8 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Curve
 
 void
-keypair (class)
-	SV *class
+keypair (package)
+	SV *package
 
 	PREINIT:
 		int rc, ctx;
@@ -34,8 +34,8 @@ keypair (class)
 		XSRETURN (1);
 
 SV *
-public (class, private_key)
-	SV *class
+public (package, private_key)
+	SV *package
 	SV *private_key
 
 	PREINIT:

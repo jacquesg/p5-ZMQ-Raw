@@ -1,8 +1,8 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Poller
 
 SV *
-new (class)
-	SV *class
+new (package)
+	SV *package
 
 	PREINIT:
 		zmq_raw_poller *poller = NULL;
@@ -29,7 +29,7 @@ add (self, socket, events)
 		PerlIO *io;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 
 		i.events = events;
 		i.revents = 0;
@@ -43,7 +43,7 @@ add (self, socket, events)
 		}
 		else
 		{
-			sock = ZMQ_SV_TO_PTR (Socket, socket);
+			sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, socket);
 			i.socket = sock->socket;
 		}
 
@@ -65,7 +65,7 @@ remove(self, socket)
 		SSize_t index, size;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 		size = av_len (poller->sockets)+1;
 		io = zmq_get_socket_io (socket);
 
@@ -78,7 +78,7 @@ remove(self, socket)
 			}
 			else
 			{
-				zmq_raw_socket *sock = ZMQ_SV_TO_PTR (Socket, socket);
+				zmq_raw_socket *sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, socket);
 				if (poller->items[index].socket == sock->socket)
 					break;
 			}
@@ -120,7 +120,7 @@ size (self)
 		SSize_t size;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 		size = av_len (poller->sockets)+1;
 
 		RETVAL = newSViv ((IV)size);
@@ -138,7 +138,7 @@ wait (self, timeout)
 		SSize_t size;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 
 		size = av_len (poller->sockets)+1;
 		rc = zmq_poll (poller->items, (int)size, timeout);
@@ -166,7 +166,7 @@ events(self, socket)
 		SSize_t i, size;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 		size = av_len (poller->sockets)+1;
 
 		for (i = 0; i < size; ++i)
@@ -188,7 +188,7 @@ DESTROY (self)
 		zmq_raw_poller *poller;
 
 	CODE:
-		poller = ZMQ_SV_TO_PTR (Poller, self);
+		poller = (zmq_raw_poller *)ZMQ_SV_TO_PTR (Poller, self);
 
 		av_undef (poller->sockets);
 		Safefree (poller);

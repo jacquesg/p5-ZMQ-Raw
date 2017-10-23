@@ -1,8 +1,8 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Z85
 
 SV *
-encode (class, decoded)
-	SV *class
+encode (package, decoded)
+	SV *package
 	SV *decoded
 
 	PREINIT:
@@ -25,8 +25,8 @@ encode (class, decoded)
 	OUTPUT: RETVAL
 
 SV *
-decode (class, encoded)
-	SV *class
+decode (package, encoded)
+	SV *package
 	SV *encoded
 
 	PREINIT:

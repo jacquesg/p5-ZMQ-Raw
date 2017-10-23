@@ -3,8 +3,8 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Socket
 INCLUDE: const-xs-socket_options.inc
 
 SV *
-new (class, context, type)
-	SV *class
+new (package, context, type)
+	SV *package
 	SV *context
 	int type
 
@@ -13,7 +13,7 @@ new (class, context, type)
 		zmq_raw_context *ctx;
 
 	CODE:
-		ctx = ZMQ_SV_TO_PTR (Context, context);
+		ctx = (zmq_raw_context *)ZMQ_SV_TO_PTR (Context, context);
 		Newxz (sock, 1, zmq_raw_socket);
 		sock->type = type;
 		sock->socket = zmq_socket (ctx->context, type);
@@ -24,7 +24,7 @@ new (class, context, type)
 			zmq_raw_check_error (-1);
 		}
 
-		ZMQ_NEW_OBJ_WITH_MAGIC (RETVAL, SvPVbyte_nolen (class), sock,
+		ZMQ_NEW_OBJ_WITH_MAGIC (RETVAL, SvPVbyte_nolen (package), sock,
 			SvRV (context));
 
 	OUTPUT: RETVAL
@@ -39,7 +39,7 @@ bind (self, endpoint)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		rc = zmq_bind (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
@@ -53,7 +53,7 @@ unbind (self, endpoint)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		rc = zmq_unbind (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
@@ -67,7 +67,7 @@ connect (self, endpoint)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		rc = zmq_connect (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
@@ -81,7 +81,7 @@ disconnect (self, endpoint)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		rc = zmq_disconnect (sock->socket, endpoint);
 		zmq_raw_check_error (rc);
 
@@ -96,7 +96,7 @@ send (self, buffer, flags=0)
 		zmq_raw_socket *sock;
 
 	PPCODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		rc = zmq_send (sock->socket,
 			SvPVX (buffer), SvCUR (buffer), flags);
 		if (rc < 0 && zmq_errno() == EAGAIN && (flags & ZMQ_DONTWAIT))
@@ -142,7 +142,7 @@ sendmsg (self, ...)
 			}
 		}
 
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		for (i = 0; i < items && count; ++i)
 		{
 			zmq_msg_t msg;
@@ -157,7 +157,7 @@ sendmsg (self, ...)
 				rc = zmq_msg_init (&msg);
 				zmq_raw_check_error (rc);
 
-				rc = zmq_msg_copy (&msg, ZMQ_SV_TO_PTR (Message, item));
+				rc = zmq_msg_copy (&msg, (zmq_msg_t *)ZMQ_SV_TO_PTR (Message, item));
 				if (rc < 0)
 					zmq_msg_close (&msg);
 				zmq_raw_check_error (rc);
@@ -204,7 +204,7 @@ recv (self, flags=0)
 	PPCODE:
 		ctx = GIMME_V;
 
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 
 		rc = zmq_msg_init (&msg);
 		zmq_raw_check_error (rc);
@@ -228,7 +228,7 @@ recv (self, flags=0)
 			}
 			zmq_raw_check_error (rc);
 
-			sv_catpvn (buffer, zmq_msg_data (&msg), zmq_msg_size (&msg));
+			sv_catpvn (buffer, (const char *)zmq_msg_data (&msg), zmq_msg_size (&msg));
 
 			more = zmq_msg_get (&msg, ZMQ_MORE);
 
@@ -273,7 +273,7 @@ recvmsg (self, flags=0)
 	PPCODE:
 		ctx = GIMME_V;
 
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 
 		rc = zmq_msg_init (&msg);
 		zmq_raw_check_error (rc);
@@ -329,7 +329,7 @@ setsockopt (self, option, value)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 
 		switch (option)
 		{
@@ -444,7 +444,7 @@ close (self)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 
 		rc = zmq_close (sock->socket);
 		zmq_raw_check_error (rc);
@@ -464,7 +464,7 @@ monitor (self, endpoint, events)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 
 		rc = zmq_socket_monitor (sock->socket, endpoint, events);
 		zmq_raw_check_error (rc);
@@ -477,7 +477,7 @@ DESTROY(self)
 		zmq_raw_socket *sock;
 
 	CODE:
-		sock = ZMQ_SV_TO_PTR (Socket, self);
+		sock = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, self);
 		if (sock->socket)
 			zmq_close (sock->socket);
 		Safefree (sock);

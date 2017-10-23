@@ -32,20 +32,27 @@ my $otherldflags = '';
 my $inc = '';
 my $ccflags = '';
 my $ld = $Config{ld};
+my $cc = $Config{cc};
+my $conlyflags = '';
 
 if ($is_gcc)
 {
-	if ($ld eq 'cc')
+	$conlyflags = '-x c';
+
+	if ($cc =~ /clang/)
 	{
-		$ld = 'c++';
+		$cc =~ s/clang/clang++/;
+		$ld =~ s/clang/clang++/;
 	}
-	elsif ($ld eq 'clang')
+	elsif ($cc =~ /gcc/)
 	{
-		$ld = 'clang++';
-	}
-	elsif ($ld =~ /gcc/)
-	{
+		$cc =~ s/gcc/g++/;
 		$ld =~ s/gcc/g++/;
+	}
+	elsif ($cc =~ /cc/)
+	{
+		$cc =~ s/cc/c++/;
+		$ld =~ s/cc/c++/;
 	}
 
 	$lib .= ' -lpthread';
@@ -54,6 +61,11 @@ if ($is_gcc)
 	{
 		$lib .= ' -lrt';
 	}
+}
+elsif ($is_solaris)
+{
+	$cc =~ s/cc/CC/;
+	$ld =~ s/cc/CC/;
 }
 
 if ($is_windows)
@@ -219,7 +231,7 @@ sub MY::c_o {
 
 	my $line = qq{
 .c\$(OBJ_EXT):
-	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
+	\$(CCCMD) \$(CCCDLFLAGS) $conlyflags "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
 
 .cpp\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
@@ -241,6 +253,7 @@ my {{ $WriteMakefileArgs }}
 $WriteMakefileArgs{DEFINE}  .= $def;
 $WriteMakefileArgs{LIBS}    .= $lib;
 $WriteMakefileArgs{INC}     .= $inc;
+$WriteMakefileArgs{CC}      .= $cc;
 $WriteMakefileArgs{LD}      .= $ld;
 $WriteMakefileArgs{CCFLAGS} .= $Config{ccflags} . ' '. $ccflags;
 $WriteMakefileArgs{OBJECT}  .= ' ' . join ' ', (@cpp_objs, @c_objs);

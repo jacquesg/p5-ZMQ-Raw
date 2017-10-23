@@ -10,7 +10,7 @@ message(self)
 		zmq_raw_error *error;
 
 	CODE:
-		error = ZMQ_SV_TO_PTR (Error, self);
+		error = (zmq_raw_error *)ZMQ_SV_TO_PTR (Error, self);
 		SvREFCNT_inc (error -> message);
 		RETVAL = error -> message;
 
@@ -24,7 +24,7 @@ code(self)
 		zmq_raw_error *error;
 
 	CODE:
-		error = ZMQ_SV_TO_PTR (Error, self);
+		error = (zmq_raw_error *)ZMQ_SV_TO_PTR (Error, self);
 		RETVAL = newSViv (error -> code);
 
 	OUTPUT: RETVAL
@@ -37,7 +37,7 @@ file(self)
 		zmq_raw_error *error;
 
 	CODE:
-		error = ZMQ_SV_TO_PTR (Error, self);
+		error = (zmq_raw_error *)ZMQ_SV_TO_PTR (Error, self);
 		RETVAL = newSVpv (error -> file, 0);
 
 	OUTPUT: RETVAL
@@ -50,7 +50,7 @@ line(self)
 		zmq_raw_error *error;
 
 	CODE:
-		error = ZMQ_SV_TO_PTR (Error, self);
+		error = (zmq_raw_error *)ZMQ_SV_TO_PTR (Error, self);
 		RETVAL = newSVuv (error -> line);
 
 	OUTPUT: RETVAL
@@ -63,7 +63,7 @@ DESTROY(self)
 		zmq_raw_error *error;
 
 	CODE:
-		error = ZMQ_SV_TO_PTR (Error, self);
+		error = (zmq_raw_error *)ZMQ_SV_TO_PTR (Error, self);
 		SvREFCNT_dec (error -> message);
 		Safefree (error);
 

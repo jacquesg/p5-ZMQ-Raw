@@ -1,8 +1,8 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Proxy
 
 SV *
-new (class)
-	SV *class
+new (package)
+	SV *package
 
 	PREINIT:
 		zmq_raw_proxy *proxy = NULL;
@@ -23,12 +23,12 @@ start (self, frontend, backend, ...)
 		zmq_raw_socket *f, *b, *c = NULL, *s = NULL;
 
 	CODE:
-		f = ZMQ_SV_TO_PTR (Socket, frontend);
-		b = ZMQ_SV_TO_PTR (Socket, backend);
+		f = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, frontend);
+		b = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, backend);
 		if (SvOK (ST (3)))
-			c = ZMQ_SV_TO_PTR (Socket, ST (3));
+			c = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, ST (3));
 		if (SvOK (ST (4)))
-			s = ZMQ_SV_TO_PTR (Socket, ST (4));
+			s = (zmq_raw_socket *)ZMQ_SV_TO_PTR (Socket, ST (4));
 
 		zmq_proxy_steerable (f->socket, b->socket,
 			c ? c->socket : NULL,
