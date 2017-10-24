@@ -102,6 +102,20 @@ Check if C<$feature> is available.
 
 =head2 ZMQ_STREAM
 
+=head2 ZMQ_SERVER
+
+=head2 ZMQ_CLIENT
+
+=head2 ZMQ_RADIO
+
+=head2 ZMQ_DISH
+
+=head2 ZMQ_GATHER
+
+=head2 ZMQ_SCATTER
+
+=head2 ZMQ_DGRAM
+
 =head2 ZMQ_DONTWAIT
 
 =head2 ZMQ_SNDMORE
