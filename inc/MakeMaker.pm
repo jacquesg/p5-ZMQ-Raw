@@ -37,7 +37,7 @@ my $conlyflags = '';
 
 if ($is_gcc)
 {
-	$conlyflags = '-x c';
+	$conlyflags .= ' -fpermissive';
 
 	if ($cc =~ /clang/)
 	{
@@ -235,6 +235,10 @@ sub MY::c_o {
 
 .cpp\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
+
+.xs.cpp:
+	\$(XSUBPPRUN) \$(XSPROTOARG) \$(XSUBPPARGS) \$(XSUBPP_EXTRA_ARGS) \$*.xs > \$*.xsc
+	\$(MV) \$*.xsc \$*.cpp
 };
 	return $line;
 }
@@ -257,6 +261,8 @@ $WriteMakefileArgs{CC}      .= $cc;
 $WriteMakefileArgs{LD}      .= $ld;
 $WriteMakefileArgs{CCFLAGS} .= $Config{ccflags} . ' '. $ccflags;
 $WriteMakefileArgs{OBJECT}  .= ' ' . join ' ', (@cpp_objs, @c_objs);
+$WriteMakefileArgs{XSOPT}   .= '-csuffix .cpp';
+$WriteMakefileArgs{XS}      = { 'Raw.xs' => 'Raw.cpp' };
 $WriteMakefileArgs{dynamic_lib} = {
 	OTHERLDFLAGS => $otherldflags
 };
