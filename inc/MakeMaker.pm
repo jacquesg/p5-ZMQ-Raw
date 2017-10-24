@@ -33,12 +33,9 @@ my $inc = '';
 my $ccflags = '';
 my $ld = $Config{ld};
 my $cc = $Config{cc};
-my $conlyflags = '';
 
 if ($is_gcc)
 {
-	$conlyflags .= '-x c';
-
 	if ($cc =~ /clang/)
 	{
 		$cc =~ s/clang/clang++/;
@@ -231,7 +228,7 @@ sub MY::c_o {
 
 	my $line = qq{
 .c\$(OBJ_EXT):
-	\$(CCCMD) \$(CCCDLFLAGS) $conlyflags "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
+	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
 
 .cpp\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
