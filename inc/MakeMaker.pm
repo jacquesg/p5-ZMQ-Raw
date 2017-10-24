@@ -37,7 +37,7 @@ my $conlyflags = '';
 
 if ($is_gcc)
 {
-	$conlyflags .= ' -fpermissive';
+	$conlyflags .= '-x c';
 
 	if ($cc =~ /clang/)
 	{
