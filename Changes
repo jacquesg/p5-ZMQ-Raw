@@ -2,6 +2,9 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Try and get the SunPRO compiler working Solaris
+ - Documentation improvements
+
 0.10      2017-10-20 15:50:14+02:00 Africa/Johannesburg
 
  - Restore perl 5.8 and 5.10 compatibility
