@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.11      2017-10-24 17:41:12+02:00 Africa/Johannesburg (TRIAL RELEASE)
+
  - Try and get the SunPRO compiler working Solaris
  - Documentation improvements
  - Update to libzmq cb266ee07
