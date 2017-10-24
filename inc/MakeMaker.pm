@@ -235,7 +235,18 @@ sub MY::c_o {
 
 .cpp\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
+};
+	return $line;
+}
 
+sub MY::xs_c {
+	my $out_switch = '-o ';
+
+	if ($is_msvc) {
+		$out_switch = '/Fo';
+	}
+
+	my $line = qq{
 .xs.cpp:
 	\$(XSUBPPRUN) \$(XSPROTOARG) \$(XSUBPPARGS) \$(XSUBPP_EXTRA_ARGS) \$*.xs > \$*.xsc
 	\$(MV) \$*.xsc \$*.cpp
