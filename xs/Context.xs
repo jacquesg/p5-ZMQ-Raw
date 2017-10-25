@@ -1,8 +1,8 @@
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Context
 
 SV *
-new (package)
-	SV *package
+new (class)
+	SV *class
 
 	PREINIT:
 		dMY_CXT;
@@ -52,7 +52,7 @@ set (self, option, value)
 		zmq_raw_context *ctx;
 
 	CODE:
-		ctx = (zmq_raw_context *)ZMQ_SV_TO_PTR (Context, self);
+		ctx = ZMQ_SV_TO_PTR (Context, self);
 		rc = zmq_ctx_set (ctx->context, option, value);
 		zmq_raw_check_error (rc);
 
@@ -65,7 +65,7 @@ shutdown (self)
 		zmq_raw_context *ctx;
 
 	CODE:
-		ctx = (zmq_raw_context *)ZMQ_SV_TO_PTR (Context, self);
+		ctx = ZMQ_SV_TO_PTR (Context, self);
 		rc = zmq_ctx_shutdown (ctx->context);
 		zmq_raw_check_error (rc);
 
@@ -92,7 +92,7 @@ DESTROY(self)
 		zmq_raw_context *ctx;
 
 	CODE:
-		ctx = (zmq_raw_context *)ZMQ_SV_TO_PTR (Context, self);
+		ctx = ZMQ_SV_TO_PTR (Context, self);
 
 		if (zmq_atomic_counter_dec (ctx->counter) == 0)
 		{

@@ -3,8 +3,8 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw::Message
 INCLUDE: const-xs-message_options.inc
 
 SV *
-new (package)
-	SV *package
+new (class)
+	SV *class
 
 	PREINIT:
 		int rc;
@@ -16,7 +16,7 @@ new (package)
 		rc = zmq_msg_init (msg);
 		zmq_raw_check_error (rc);
 
-		ZMQ_NEW_OBJ (RETVAL, SvPVbyte_nolen (package), msg);
+		ZMQ_NEW_OBJ (RETVAL, SvPVbyte_nolen (class), msg);
 
 	OUTPUT: RETVAL
 
@@ -29,7 +29,7 @@ data (self, ...)
 		zmq_msg_t *msg;
 
 	CODE:
-		msg = (zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self);
+		msg = ZMQ_SV_TO_PTR (Message, self);
 
 		if (items > 1)
 		{
@@ -48,7 +48,7 @@ data (self, ...)
 		if (zmq_msg_size (msg) == 0)
 			XSRETURN_UNDEF;
 
-		RETVAL = newSVpv ((const char *)zmq_msg_data (msg), zmq_msg_size (msg));
+		RETVAL = newSVpv (zmq_msg_data (msg), zmq_msg_size (msg));
 
 	OUTPUT: RETVAL
 
@@ -57,7 +57,7 @@ more (self)
 	SV *self
 
 	CODE:
-		RETVAL = zmq_msg_more ((zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self));
+		RETVAL = zmq_msg_more (ZMQ_SV_TO_PTR (Message, self));
 
 	OUTPUT: RETVAL
 
@@ -66,7 +66,7 @@ size (self)
 	SV *self
 
 	CODE:
-		RETVAL = zmq_msg_size ((zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self));
+		RETVAL = zmq_msg_size (ZMQ_SV_TO_PTR (Message, self));
 
 	OUTPUT: RETVAL
 
@@ -79,7 +79,7 @@ clone (self)
 		zmq_msg_t *msg, *old;
 
 	CODE:
-		old = (zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self);
+		old = ZMQ_SV_TO_PTR (Message, self);
 
 		Newx (msg, 1, zmq_msg_t);
 		rc = zmq_msg_init (msg);
@@ -109,11 +109,11 @@ routing_id(self, ...)
 				croak_usage ("routing_id should be unsigned");
 
 			id = SvIV (ST (1));
-			rc = zmq_msg_set_routing_id ((zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self), id);
+			rc = zmq_msg_set_routing_id (ZMQ_SV_TO_PTR (Message, self), id);
 			zmq_raw_check_error (rc);
 		}
 
-		id = zmq_msg_routing_id ((zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self));
+		id = zmq_msg_routing_id (ZMQ_SV_TO_PTR (Message, self));
 		if (id == 0)
 			XSRETURN_UNDEF;
 
@@ -130,7 +130,7 @@ get (self, property)
 		int rc;
 
 	CODE:
-		rc = zmq_msg_get ((zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self), property);
+		rc = zmq_msg_get (ZMQ_SV_TO_PTR (Message, self), property);
 		zmq_raw_check_error (rc);
 		RETVAL = rc;
 
@@ -145,7 +145,7 @@ DESTROY(self)
 		zmq_msg_t *msg;
 
 	CODE:
-		msg = (zmq_msg_t *)ZMQ_SV_TO_PTR (Message, self);
+		msg = ZMQ_SV_TO_PTR (Message, self);
 
 		rc = zmq_msg_close (msg);
 		zmq_raw_check_error (rc);
