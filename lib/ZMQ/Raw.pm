@@ -140,6 +140,12 @@ Check if C<$feature> is available.
 
 =head2 ZMQ_MAX_MSGSZ
 
+=head2 ZMQ_MSG_T_SIZE
+
+=head2 ZMQ_THREAD_AFFINITY
+
+=head2 ZMQ_THREAD_NAME_PREFIX
+
 =head2 ZMQ_EVENT_CONNECTED
 
 =head2 ZMQ_EVENT_CONNECT_DELAYED

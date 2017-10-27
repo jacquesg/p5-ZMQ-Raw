@@ -165,6 +165,14 @@ Returns a L<C<ZMQ::Raw::Message>> object or an array of object.
 
 Set a socket option.
 
+=head2 join( $group )
+
+Join a group.
+
+=head2 leave( $group )
+
+Leave a group.
+
 =head1 CONSTANTS
 
 =head2 ZMQ_AFFINITY

@@ -13,9 +13,16 @@ sub AUTOLOAD
     my $constname;
     our $AUTOLOAD;
     ($constname = $AUTOLOAD) =~ s/.*:://;
-    croak "&ZMQ::Raw::Message::_constant not defined" if $constname eq '_constant';
-    my ($error, $val) = _constant ($constname);
-    if ($error) { croak $error; }
+    croak "&ZMQ::Raw::Message::_constant not defined" if ($constname eq '_o_constant' || $constname eq '_p_constant');
+    my ($error, $val) = _o_constant ($constname);
+    if ($error)
+	{
+		($error, $val) = _p_constant ($constname);
+		if ($error)
+		{
+			croak $error;
+		}
+	}
     {
         no strict 'refs';
         *$AUTOLOAD = sub { $val };
@@ -70,15 +77,31 @@ Get the size in bytes of the content of the messsage.
 Get or set the routing id of the socket. To get a valid routing id, you must
 receive a message from a C<ZMQ_SERVER> socket.
 
+=head2 group( [$group] )
+
+Get or set the group socket.
+
 =head2 get( $property )
 
 Get the value of C<$property>.
+
+=head2 gets( $property )
+
+Get metadata property.
 
 =head1 CONSTANTS
 
 =head2 ZMQ_MORE
 
 =head2 ZMQ_SHARED
+
+=head2 ZMQ_MSG_PROPERTY_ROUTING_ID
+
+=head2 ZMQ_MSG_PROPERTY_SOCKET_TYPE
+
+=head2 ZMQ_MSG_PROPERTY_USER_ID
+
+=head2 ZMQ_MSG_PROPERTY_PEER_ADDRESS
 
 =head1 AUTHOR
 

@@ -21,6 +21,7 @@
 #include "const-c-constant.inc"
 #include "const-c-error.inc"
 #include "const-c-message_options.inc"
+#include "const-c-message_properties.inc"
 #include "const-c-socket_options.inc"
 
 typedef struct

@@ -470,6 +470,36 @@ monitor (self, endpoint, events)
 		zmq_raw_check_error (rc);
 
 void
+join (self, group)
+	SV *self
+	const char *group
+
+	PREINIT:
+		int rc;
+		zmq_raw_socket *sock;
+
+	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
+		rc = zmq_join (sock->socket, group);
+		zmq_raw_check_error (rc);
+
+void
+leave (self, group)
+	SV *self
+	const char *group
+
+	PREINIT:
+		int rc;
+		zmq_raw_socket *sock;
+
+	CODE:
+		sock = ZMQ_SV_TO_PTR (Socket, self);
+
+		rc = zmq_leave (sock->socket, group);
+		zmq_raw_check_error (rc);
+
+void
 DESTROY(self)
 	SV *self
 
