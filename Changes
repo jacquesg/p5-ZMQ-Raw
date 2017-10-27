@@ -3,6 +3,12 @@ Revision history for ZMQ-Raw
 {{$NEXT}}
 
  - Revert C++ changes, they do more harm than good.
+ - Added Message methods:
+    + gets()
+ - Added Socket methods:
+    + join()
+    + leave()
+ - Added (most) DRAFT API constants
 
 0.11      2017-10-24 17:41:12+02:00 Africa/Johannesburg (TRIAL RELEASE)
 
