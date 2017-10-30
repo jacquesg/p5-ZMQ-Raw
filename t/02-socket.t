@@ -198,7 +198,7 @@ $msg = ZMQ::Raw::Message->new;
 $msg->data ('world');
 push @msgs, $msg;
 
-$req->sendmsg (@msgs, 'hello', 'world');
+$req->sendmsg (@msgs, 'hello', 0, 'world');
 
 $msg2 = $rep->recvmsg();
 is $msg2->more, 1;
@@ -206,7 +206,7 @@ is $msg2->data(), 'hello';
 ok (!defined ($msg2->gets (ZMQ::Raw::Message->ZMQ_MSG_PROPERTY_ROUTING_ID)));
 
 @msgs = $rep->recvmsg();
-is scalar (@msgs), 3;
+is scalar (@msgs), 4;
 
 $msg2 = shift @msgs;
 is $msg2->more, 1;
@@ -215,6 +215,10 @@ is $msg2->data(), 'world';
 $msg2 = shift @msgs;
 is $msg2->more, 1;
 is $msg2->data(), 'hello';
+
+$msg2 = shift @msgs;
+is $msg2->more, 1;
+is $msg2->data(), '0';
 
 $msg2 = shift @msgs;
 is $msg2->more, 0;
