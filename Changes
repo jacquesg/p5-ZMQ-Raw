@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.12      2017-10-30 13:32:06+02:00 Africa/Johannesburg
+
  - Revert C++ changes, they do more harm than good.
  - Added Message methods:
     + gets()
