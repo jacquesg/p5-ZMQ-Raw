@@ -9,6 +9,7 @@ Revision history for ZMQ-Raw
     + join()
     + leave()
  - Added (most) DRAFT API constants
+ - Handle IV's in Socket->sendmsg()
 
 0.11      2017-10-24 17:41:12+02:00 Africa/Johannesburg (TRIAL RELEASE)
 
