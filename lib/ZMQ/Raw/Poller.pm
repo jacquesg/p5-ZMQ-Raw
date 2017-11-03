@@ -74,6 +74,9 @@ the poller this method will return C<undef>.
 Wait for up to C<$timeout> milliseconds for an event. Returns the number of
 items that had events.
 
+This method may return C<undef> if the system call was interrupt, after which
+it may be reattempted.
+
 =head2 size( )
 
 Retrieve the number of sockets currently polled.

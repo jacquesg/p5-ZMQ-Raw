@@ -187,6 +187,20 @@ is $msgs[3], 'world';
 @msgs = ();
 
 $rep->send ('done');
+
+if ($^O ne 'MSWin32')
+{
+	my $alarm = 0;
+	local $SIG{ALRM} = sub
+	{
+		$alarm = 1;
+	};
+	alarm 1;
+	my @tmp = $rep->recv();
+	is scalar (@tmp), 0;
+	ok ($alarm);
+}
+
 $req->recv();
 
 # sendmsg/recvmsg (multi msg)
