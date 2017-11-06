@@ -121,6 +121,9 @@ $req->connect ('tcp://localhost:5555');
 $req->send ('hello');
 ok (!defined ($req->recv (ZMQ::Raw->ZMQ_DONTWAIT)));
 
+$req->setsockopt (ZMQ::Raw::Socket->ZMQ_RCVTIMEO, 100);
+ok (!defined ($req->recv));
+
 my $result = $rep->recv();
 is $result, 'hello';
 

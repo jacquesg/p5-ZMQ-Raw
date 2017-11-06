@@ -256,7 +256,7 @@ STATIC void *zmq_sv_to_ptr (const char *type, SV *sv, const char *file, int line
 		{                                                                         \
 			zmq_raw_error *e;                                                     \
                                                                                   \
-			if (zmq_errno() == EINTR)                                             \
+			if (zmq_errno() == EINTR || zmq_errno() == EAGAIN)                    \
 			{                                                                     \
 				int ctx = GIMME_V;                                                \
 				if (ctx == G_ARRAY)                                               \
