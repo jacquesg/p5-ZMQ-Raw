@@ -127,8 +127,9 @@ follow.
 
 =back
 
-This method may return C<undef> if the system call was interrupt, after which
-it may be reattempted.
+This method may return C<undef> (or an empty list if called in list context) if
+the system call was interrupt or if the operation cannot be completed
+immediately, after which it may be reattempted.
 
 =head2 close( )
 
@@ -150,8 +151,9 @@ may either be a L<C<ZMQ::Raw::Message>> object or a "normal" perl scalar. The
 C<$flags> parameter is only available if all items in C<@msgs> are L<C<ZMQ::Raw::Message>>
 objects. See the SYNOPSIS for usage examples.
 
-This method may return C<undef> if the system call was interrupt, after which
-it may be reattempted.
+This method may return C<undef> (or an empty list if called in list context) if
+the system call was interrupt or if the operation cannot be completed
+immediately, after which it may be reattempted.
 
 =head2 recv( $flags = 0)
 
@@ -162,16 +164,18 @@ method will return C<undef> immediately. If called in list context, this method
 will return each part of the message as a scalar item. In scalar context, each
 part of the message will be concatenated into a single scalar item.
 
-This method may return C<undef> if the system call was interrupt, after which
-it may be reattempted.
+This method may return C<undef> (or an empty list if called in list context) if
+the system call was interrupt or if the operation cannot be completed
+immediately, after which it may be reattempted.
 
 =head2 recvmsg( $flags = 0)
 
 Receive a message part or multiple messages parts if called in list context.
 Returns a L<C<ZMQ::Raw::Message>> object or an array of object.
 
-This method may return C<undef> if the system call was interrupt, after which
-it may be reattempted.
+This method may return C<undef> (or an empty list if called in list context) if
+the system call was interrupt or if the operation cannot be completed
+immediately, after which it may be reattempted.
 
 =head2 setsockopt( $option, $value )
 
