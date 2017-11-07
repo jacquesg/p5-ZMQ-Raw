@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.14      2017-11-07 12:48:33+02:00 Africa/Johannesburg
+
 0.13      2017-11-03 11:32:45+02:00 Africa/Johannesburg
 
  - Handle all instances of EAGAIN
