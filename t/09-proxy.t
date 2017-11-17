@@ -8,9 +8,18 @@ use ZMQ::Raw;
 
 if (!$Config{useithreads})
 {
-	diag ("threads not available, skipping");
 	my $proxy = ZMQ::Raw::Proxy->new();
 	isa_ok $proxy, 'ZMQ::Raw::Proxy';
+
+	my $ctx = ZMQ::Raw::Context->new;
+	my $frontend = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_ROUTER);
+	$frontend->bind ('tcp://*:5555');
+
+	my $backend = ZMQ::Raw::Socket->new ($ctx, ZMQ::Raw->ZMQ_DEALER);
+	$backend->bind ('tcp://*:5556');
+
+	ok (!eval {$proxy->start ($frontend, $backend)});
+
 	done_testing;
 	exit;
 }
