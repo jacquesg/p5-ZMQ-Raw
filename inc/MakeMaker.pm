@@ -207,7 +207,7 @@ close $fh;
 my @cpp_srcs = glob 'deps/libzmq/src/*.cpp';
 my @cpp_objs = map { substr ($_, 0, -3) . 'o' } (@cpp_srcs);
 
-my @c_srcs = glob 'deps/libzmq/src/*.c';
+my @c_srcs = (glob ('deps/libzmq/src/*.c'), glob ('deps/libzmqraw/*.c'));
 my @c_objs = map { substr ($_, 0, -1) . 'o' } (@c_srcs);
 
 sub MY::c_o {
@@ -507,7 +507,7 @@ TEMPLATE
 override _build_WriteMakefile_args => sub {
 	return +{
 		%{ super() },
-		INC	    => '-I. -Ideps/libzmq/include',
+		INC	    => '-I. -Ideps -Ideps/libzmq/include',
 		OBJECT	=> '$(O_FILES)',
 	}
 };

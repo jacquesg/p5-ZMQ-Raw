@@ -40,7 +40,7 @@ install:
  - dzil listdeps --missing | cpanm --quiet --notest
 
 script:
- - if [[ ! $TRAVIS_PERL_VERSION =~ "shrplib" ]]; then dzil cover -ignore_re ^Raw.cpp -ignore_re ^deps -ignore_re CORE -ignore_re ^const -ignore_re curl -test -report coveralls; fi
+ - if [[ ! $TRAVIS_PERL_VERSION =~ "shrplib" ]]; then dzil cover -ignore_re ^Raw.cpp -ignore_re ^deps/libzmq/src -ignore_re CORE -ignore_re ^const -ignore_re curl -test -report coveralls; fi
  - if [[ $TRAVIS_PERL_VERSION =~ "shrplib" ]]; then dzil test; fi
 
 notifications:

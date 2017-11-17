@@ -436,6 +436,9 @@ close (self)
 	CODE:
 		sock = ZMQ_SV_TO_PTR (Socket, self);
 
+		if (sock->context == NULL)
+			croak_usage ("close() cannot be called on this socket");
+
 		rc = zmq_close (sock->socket);
 		zmq_raw_check_error (rc);
 

@@ -5,6 +5,8 @@
 #include "ppport.h"
 
 #include <zmq.h>
+#include <libzmqraw/mutex.h>
+#include <libzmqraw/timers.h>
 
 #ifndef MUTABLE_GV
 #define MUTABLE_GV(p) ((GV *)MUTABLE_PTR(p))
@@ -56,6 +58,11 @@ typedef struct
 	int dummy;
 } zmq_raw_proxy;
 
+typedef struct my_cxt_t
+{
+	zmq_raw_context *contexts;
+	zmq_raw_timers *timers;
+} my_cxt_t;
 
 STATIC PerlIO *zmq_get_socket_io (SV *sv)
 {
@@ -278,13 +285,15 @@ STATIC void *zmq_sv_to_ptr (const char *type, SV *sv, const char *file, int line
 		}                                                                         \
     } STMT_END
 
+static zmq_raw_timers *timers;
+STATIC void zmq_raw_cleanup (void)
+{
+	#ifndef _WIN32
+	zmq_raw_timers_destroy (timers);
+	#endif
+}
 
 #define MY_CXT_KEY "ZMQ::Raw::_guts"
-typedef struct
-{
-	zmq_raw_context *contexts;
-} my_cxt_t;
-
 #define MAX_CONTEXT_COUNT 64
 static zmq_raw_context contexts[MAX_CONTEXT_COUNT];
 
@@ -294,8 +303,12 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw
 
 BOOT:
 {
+	timers = zmq_raw_timers_create();
+
 	MY_CXT_INIT;
 	MY_CXT.contexts = contexts;
+	MY_CXT.timers = timers;
+	atexit (zmq_raw_cleanup);
 }
 
 INCLUDE: const-xs-constant.inc
@@ -348,5 +361,6 @@ INCLUDE: xs/Message.xs
 INCLUDE: xs/Poller.xs
 INCLUDE: xs/Proxy.xs
 INCLUDE: xs/Socket.xs
+INCLUDE: xs/Timer.xs
 INCLUDE: xs/Z85.xs
 

@@ -10,10 +10,12 @@ XSLoader::load ('ZMQ::Raw', $ZMQ::Raw::VERSION);
 use ZMQ::Raw::Context;
 use ZMQ::Raw::Curve;
 use ZMQ::Raw::Error;
+use ZMQ::Raw::Loop;
 use ZMQ::Raw::Message;
 use ZMQ::Raw::Poller;
 use ZMQ::Raw::Proxy;
 use ZMQ::Raw::Socket;
+use ZMQ::Raw::Timer;
 use ZMQ::Raw::Z85;
 
 sub AUTOLOAD
