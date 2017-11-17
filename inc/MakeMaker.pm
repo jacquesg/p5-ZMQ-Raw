@@ -59,6 +59,8 @@ if ($is_gcc)
 if ($is_windows)
 {
 	$def .= ' -D_WINSOCK_DEPRECATED_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DFD_SETSIZE=16384';
+	$def .= ' -D_WIN32_WINNT=0x0600';
+
 	$lib .= ' -lws2_32 -lrpcrt4 -liphlpapi msvcprt.lib';
 
 	if ($is_msvc)

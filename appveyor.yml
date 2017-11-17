@@ -5,17 +5,30 @@ install:
  - if not exist "C:\projects\sources" mkdir "C:\projects\sources"
  - cd C:\projects\sources
 
- # Perl
- - ps: Start-FileDownload http://strawberryperl.com/download/5.20.1.1/strawberry-perl-5.20.1.1-64bit.msi
- - msiexec /i "C:\projects\sources\strawberry-perl-5.20.1.1-64bit.msi" /qn INSTALLDIR="C:\projects\perl"
+ # download
+ - set PERL520PACKAGE="C:\projects\sources\strawberry-perl-5.20.1.1-64bit.msi"
+ - if not exist %PERL520PACKAGE% curl -fsS -o %PERL520PACKAGE% http://strawberryperl.com/download/5.20.1.1/strawberry-perl-5.20.1.1-64bit.msi
 
- - set PATH=C:\projects\perl\perl\bin;C:\projects\perl\perl\site\bin;C:\projects\perl\c\bin;%PATH%
+ - set PERL524PACKAGE="C:\projects\sources\strawberry-perl-5.24.3.1-64bit.msi"
+ - if not exist %PERL524PACKAGE% curl -fsS -o %PERL524PACKAGE% http://strawberryperl.com/download/5.24.3.1/strawberry-perl-5.24.3.1-64bit.msi
+
+ - set PERL520=C:\projects\perl520
+ - msiexec /i %PERL520PACKAGE% /qn /norestart INSTALLDIR="%PERL520%"
+
+ - set OLDPATH=%PATH%
+ - set PATH=%PERL520%\perl\bin;%PERL520%\perl\site\bin;%PERL520%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw
-
  - cpanm --notest Dist::Zilla Dist::Zilla::PluginBundle::Author::ALEXBIO Pod::Coverage::TrustPod
  - cpanm --quiet --notest Devel::Cover::Report::Coveralls Dist::Zilla::App::Command::cover
  - dzil authordeps --missing | cpanm --notest
  - dzil listdeps --missing | cpanm --notest
+ - dzil build --in ZMQ-Raw-58
+ - dzil build --in ZMQ-Raw-520
+ - dzil build --in ZMQ-Raw-524
 
 build_script:
- - dzil test --all
+ - set PATH=%PERL520%\perl\bin;%PERL520%\perl\site\bin;%PERL520%\c\bin;%OLDPATH%
+ - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-520
+ - perl Makefile.PL
+ - dmake test
+
