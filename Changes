@@ -2,6 +2,9 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Added Loop and Timer classes (Beta, not heavily tested
+   nor documented)
+
 0.14      2017-11-07 12:48:33+02:00 Africa/Johannesburg
 
  - Handle all instances of EAGAIN
