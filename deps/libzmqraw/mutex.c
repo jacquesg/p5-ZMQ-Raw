@@ -8,14 +8,14 @@
 
 #include "mutex.h"
 
-typedef struct zmq_raw_mutex
+struct zmq_raw_mutex
 {
 #ifdef _WIN32
 	CRITICAL_SECTION m;
 #else
 	pthread_mutex_t m;
 #endif
-} zmq_raw_mutex;
+};
 
 
 zmq_raw_mutex *zmq_raw_mutex_create()

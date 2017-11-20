@@ -7,7 +7,7 @@
 #include "timers.h"
 
 
-typedef struct zmq_raw_timers
+struct zmq_raw_timers
 {
 	zmq_raw_mutex *mutex;
 	void *timers;
@@ -21,9 +21,9 @@ typedef struct zmq_raw_timers
 	void *wakeup_context;
 	void *wakeup_send;
 	void *wakeup_recv;
-} zmq_raw_timers;
+};
 
-typedef struct zmq_raw_timer
+struct zmq_raw_timer
 {
 	int id;
 	int running;
@@ -34,7 +34,7 @@ typedef struct zmq_raw_timer
 	void *recv;
 	void *recv_sv;
 	zmq_raw_timers *timers;
-} zmq_raw_timer;
+};
 
 
 static void timer_handler (int timer_id, void *arg);
