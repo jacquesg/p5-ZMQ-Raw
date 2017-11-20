@@ -61,7 +61,6 @@ typedef struct
 typedef struct my_cxt_t
 {
 	zmq_raw_context *contexts;
-	zmq_raw_timers *timers;
 } my_cxt_t;
 
 STATIC PerlIO *zmq_get_socket_io (SV *sv)
@@ -286,11 +285,14 @@ STATIC void *zmq_sv_to_ptr (const char *type, SV *sv, const char *file, int line
     } STMT_END
 
 static zmq_raw_timers *timers;
-STATIC void zmq_raw_cleanup (void)
+static zmq_raw_mutex *timers_mutex;
+STATIC void zmq_raw_timers_cleanup (void)
 {
 	#ifndef _WIN32
 	zmq_raw_timers_destroy (timers);
 	#endif
+
+	zmq_raw_mutex_destroy (timers_mutex);
 }
 
 #define MY_CXT_KEY "ZMQ::Raw::_guts"
@@ -303,12 +305,11 @@ MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw
 
 BOOT:
 {
-	timers = zmq_raw_timers_create();
-
 	MY_CXT_INIT;
 	MY_CXT.contexts = contexts;
-	MY_CXT.timers = timers;
-	atexit (zmq_raw_cleanup);
+
+	timers_mutex = zmq_raw_mutex_create();
+	assert (timers_mutex);
 }
 
 INCLUDE: const-xs-constant.inc

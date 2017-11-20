@@ -8,7 +8,6 @@ _new (class, context, after, interval)
 	SV *interval
 
 	PREINIT:
-		dMY_CXT;
 		zmq_raw_timer *timer;
 		zmq_raw_context *ctx;
 		zmq_raw_socket *sock;
@@ -17,8 +16,21 @@ _new (class, context, after, interval)
 	CODE:
 		ctx = ZMQ_SV_TO_PTR (Context, context);
 
-		timer = zmq_raw_timers_start (MY_CXT.timers, ctx->context,
+		zmq_raw_mutex_lock (timers_mutex);
+		if (timers == NULL)
+		{
+			timers = zmq_raw_timers_create();
+			if (timers == NULL)
+				zmq_raw_check_error (-1);
+
+			atexit (zmq_raw_timers_cleanup);
+		}
+		zmq_raw_mutex_unlock (timers_mutex);
+
+		timer = zmq_raw_timers_start (timers, ctx->context,
 			after, SvIOK (interval) ? SvIV (interval) : 0);
+		if (timer == NULL)
+			zmq_raw_check_error (-1);
 
 		Newxz (sock, 1, zmq_raw_socket);
 		sock->socket = zmq_raw_timer_get_recv (timer);

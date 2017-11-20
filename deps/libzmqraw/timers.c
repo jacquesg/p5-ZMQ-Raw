@@ -43,19 +43,32 @@ static void timer_thread (void *arg);
 
 zmq_raw_timers *zmq_raw_timers_create()
 {
-	zmq_raw_timers *timers = calloc (1, sizeof (zmq_raw_timers));
-	timers->timers = zmq_timers_new();
+	int rc;
+	zmq_raw_timers *timers;
 
-	timers->wakeup_context = zmq_ctx_new();
-	timers->wakeup_send = zmq_socket (timers->wakeup_context, ZMQ_PAIR);
-	timers->wakeup_recv = zmq_socket (timers->wakeup_context, ZMQ_PAIR);
+	if ((timers = calloc (1, sizeof (zmq_raw_timers))) == NULL ||
+		(timers->timers = zmq_timers_new()) == NULL ||
+		(timers->wakeup_context = zmq_ctx_new()) == NULL ||
+		(timers->wakeup_send = zmq_socket (timers->wakeup_context, ZMQ_PAIR)) == NULL ||
+		(timers->wakeup_recv = zmq_socket (timers->wakeup_context, ZMQ_PAIR)) == NULL)
+		goto on_error;
 
-	zmq_bind (timers->wakeup_recv, "inproc://_wakeup");
-	zmq_connect (timers->wakeup_send, "inproc://_wakeup");
+	if ((rc = zmq_bind (timers->wakeup_recv, "inproc://_wakeup")) < 0 ||
+		(rc = zmq_connect (timers->wakeup_send, "inproc://_wakeup")) < 0)
+		goto on_error;
 
+	goto done;
+
+on_error:
+	zmq_close (timers->wakeup_recv);
+	zmq_close (timers->wakeup_send);
+	zmq_ctx_term (timers->wakeup_context);
+	free (timers);
+	return NULL;
+
+done:
 	timers->wakeup_item.events = ZMQ_POLLIN;
 	timers->wakeup_item.socket = timers->wakeup_recv;
-
 	timers->mutex = zmq_raw_mutex_create();
 	return timers;
 }
@@ -91,36 +104,30 @@ static zmq_raw_timer *zmq_raw_timer_create (void *context, int after, int interv
 
 	assert (context);
 
-	timer = calloc (1, sizeof (zmq_raw_timer));
-	timer->send = zmq_socket (context, ZMQ_PAIR);
-	if (timer->send == NULL)
-	{
-		fprintf(stderr, "could not create timer send socket: %d => %s\n",
-			zmq_errno(), zmq_strerror (zmq_errno()));
-		assert (timer->send);
-	}
+	sprintf (endpoint, "inproc://_timer-%d", ++id);
 
-	timer->recv = zmq_socket (context, ZMQ_PAIR);
-	if (timer->recv == NULL)
-	{
-		fprintf(stderr, "could not create timer receive socket: %d => %s\n",
-			zmq_errno(), zmq_strerror (zmq_errno()));
-		assert (timer->recv);
-	}
+	if ((timer = calloc (1, sizeof (zmq_raw_timer))) == NULL ||
+		(timer->send = zmq_socket (context, ZMQ_PAIR)) == NULL ||
+		(timer->recv = zmq_socket (context, ZMQ_PAIR)) == NULL)
+		goto on_error;
 
 	timer->after = after;
 	timer->interval = interval;
 
-	sprintf (endpoint, "inproc://_timer-%d", ++id);
-	rc = zmq_bind (timer->recv, endpoint);
-	assert (rc == 0);
+	if ((rc = zmq_bind (timer->recv, endpoint)) < 0 ||
+		(rc = zmq_setsockopt (timer->recv, ZMQ_CONFLATE, &v, sizeof (v))) < 0 ||
+		(rc = zmq_connect (timer->send, endpoint)) < 0)
+		goto on_error;
 
-	rc = zmq_setsockopt (timer->recv, ZMQ_CONFLATE, &v, sizeof (v));
-	assert (rc == 0);
+	goto done;
 
-	rc = zmq_connect (timer->send, endpoint);
-	assert (rc == 0);
+on_error:
+	zmq_close (timer->send);
+	zmq_close (timer->recv);
+	free (timer);
+	return NULL;
 
+done:
 	return timer;
 }
 
@@ -146,6 +153,12 @@ zmq_raw_timer *zmq_raw_timers_start (zmq_raw_timers *timers, void *context, int 
 	zmq_raw_mutex_lock (timers->mutex);
 
 	timer = zmq_raw_timer_create (context, after, interval);
+	if (timer == NULL)
+	{
+		zmq_raw_mutex_unlock (timers->mutex);
+		return NULL;
+	}
+
 	timer->id = zmq_timers_add (timers->timers, timer->after, timer_handler, timer);
 	timer->running = 1;
 	timer->timers = timers;
