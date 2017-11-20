@@ -137,7 +137,9 @@ static void zmq_raw_timer_destroy (zmq_raw_timer *timer)
 	assert (timer->send);
 
 	zmq_close (timer->send);
-	timer->send = NULL;
+
+	if (timer->recv)
+		zmq_close (timer->recv);
 
 	free (timer);
 }
@@ -239,6 +241,8 @@ void zmq_raw_timer_set_sv (zmq_raw_timer *timer, void *sv)
 {
 	assert (timer);
 	assert (sv);
+	assert (timer->recv_sv == NULL);
+
 	timer->recv_sv = sv;
 	timer->recv = NULL;
 }
@@ -260,7 +264,7 @@ void timer_thread (void *arg)
 		zmq_raw_mutex_lock (timers->mutex);
 
 		/* clear any 'pending' wakeup signals */
-		zmq_recv (timers->wakeup_recv, NULL, 0, ZMQ_DONTWAIT);
+		while (zmq_recv (timers->wakeup_recv, NULL, 0, ZMQ_DONTWAIT) == 0);
 
 		timers->last = NULL;
 		timers->run_count = 0;
@@ -294,6 +298,8 @@ void timer_thread (void *arg)
 
 void timer_handler (int timer_id, void *arg)
 {
+	assert (arg);
+
 	/* this is guaranteed to execute with the timers mutex locked */
 	zmq_raw_timer *timer = (zmq_raw_timer *)arg;
 
