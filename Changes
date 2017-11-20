@@ -2,6 +2,9 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Make timers fork() friendlier
+ - Build on more version of perl on Windows (appveyor)
+
 0.15      2017-11-17 10:46:40+02:00 Africa/Johannesburg
 
  - Added Loop and Timer classes (Beta, not heavily tested
