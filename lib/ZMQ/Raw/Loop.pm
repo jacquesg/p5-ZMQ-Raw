@@ -49,7 +49,7 @@ B<WARNING>: The API of this module is unstable and may change without warning
 
 =head1 METHODS
 
-=head2 new( )
+=head2 new( $context )
 
 Create a new event loop
 
@@ -61,9 +61,15 @@ Run the event loop
 
 Run until a single event occurs
 
-=head2 add( )
+=head2 add( $item )
 
-TBC
+Add C<$item> to the event loop. C<$item> should be a L<C<ZMQ::Raw::Loop::Event>>,
+L<C<ZMQ::Raw::Loop::Handle>>, L<C<ZMQ::Raw::Loop::Timer>> or
+L<C<ZMQ::Raw::Loop::Promise>>.
+
+=head2 remove( $item )
+
+Remove C<$item> from the event loop.
 
 =head2 terminate( )
 
@@ -164,7 +170,6 @@ sub _add_timer
 {
 	my ($this, $timer) = @_;
 
-	$timer->done (0);
 	$timer->loop ($this);
 	$this->poller->add ($timer->timer->socket, ZMQ::Raw->ZMQ_POLLIN);
 
@@ -177,7 +182,6 @@ sub _add_event
 {
 	my ($this, $event) = @_;
 
-	$event->done (0);
 	$event->loop ($this);
 	$this->poller->add ($event->read_handle, ZMQ::Raw->ZMQ_POLLIN);
 
@@ -224,11 +228,118 @@ sub _add_handle
 		$this->poller->add ($handle->timer->socket, ZMQ::Raw->ZMQ_POLLIN);
 	}
 
-	$handle->done (0);
 	$handle->loop ($this);
 	$this->poller->add ($handle->handle, $events);
 
 	push @{$this->handles}, $handle;
+}
+
+
+
+sub remove
+{
+	my ($this, $item) = @_;
+
+	if (ref ($item) eq 'ZMQ::Raw::Loop::Timer')
+	{
+		$this->_remove_timer ($item);
+	}
+	elsif (ref ($item) eq 'ZMQ::Raw::Loop::Handle')
+	{
+		$this->_remove_handle ($item);
+	}
+	elsif (ref ($item) eq 'ZMQ::Raw::Loop::Event')
+	{
+		$this->_remove_event ($item);
+	}
+	else
+	{
+		croak "don't know how to remove $item";
+	}
+}
+
+
+
+sub _remove_timer
+{
+	my ($this, $timer) = @_;
+
+	my @left;
+	foreach my $t (@{$this->timers})
+	{
+		if ($timer == $t)
+		{
+			my $socket = $timer->timer->socket;
+			$socket->recv (ZMQ::Raw->ZMQ_DONTWAIT);
+			$this->poller->remove ($socket);
+			next;
+		}
+
+		push @left, $t;
+	}
+
+	$this->timers (\@left);
+}
+
+
+
+sub _remove_handle
+{
+	my ($this, $handle) = @_;
+
+	my @left;
+	foreach my $h (@{$this->handles})
+	{
+		if ($h == $handle)
+		{
+			$this->poller->remove ($handle->handle);
+
+			my $timer = $handle->timer;
+			if ($timer)
+			{
+				$this->poller->remove ($timer->socket);
+				$timer->cancel();
+				$timer->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT);
+			}
+
+			next;
+		}
+
+		push @left, $h;
+	}
+
+	$this->handles (\@left);
+}
+
+
+
+sub _remove_event
+{
+	my ($this, $event) = @_;
+
+	my @left;
+	foreach my $e (@{$this->events})
+	{
+		if ($e == $event)
+		{
+			$this->poller->remove ($event->read_handle);
+			$event->read_handle->recv (ZMQ::Raw->ZMQ_DONTWAIT);
+
+			my $timer = $event->timer;
+			if ($timer)
+			{
+				$timer->cancel();
+				$timer->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT);
+				$this->poller->remove ($timer->socket);
+			}
+
+			next;
+		}
+
+		push @left, $e;
+	}
+
+	$this->events (\@left);
 }
 
 
@@ -242,16 +353,7 @@ sub _dispatch_handles
 		my $events = $this->poller->events ($handle->handle);
 		if ($events)
 		{
-			$handle->done (1);
-			$this->handles ([grep { !$_->done } @{$this->handles}]);
-
-			$this->poller->remove ($handle->handle);
-
-			if ($handle->timer)
-			{
-				$handle->timer->cancel();
-				$this->poller->remove ($handle->timer->socket);
-			}
+			$this->_remove_handle ($handle);
 
 			if ($events & ZMQ::Raw->ZMQ_POLLIN)
 			{
@@ -263,25 +365,23 @@ sub _dispatch_handles
 				my $writable = $handle->on_writable;
 				&{$writable} ($handle) if $writable;
 			}
+
+			return 1;
 		}
-		elsif ($handle->timer)
+
+		if ($handle->timer)
 		{
 			my $events = $this->poller->events ($handle->timer->socket);
 			if ($events)
 			{
-				$handle->done (1);
-				$this->handles ([grep { !$_->done } @{$this->handles}]);
+				$this->_remove_handle ($handle);
 
-				$this->poller->remove ($handle->handle);
-				$this->poller->remove ($handle->timer->socket);
-
-				$handle->timer->socket->recv;
 				my $timeout = $handle->on_timeout;
 				&{$timeout} ($handle) if $timeout;
+
+				return 1;
 			}
 		}
-
-		return 1 if $handle->done;
 	}
 
 	return 0;
@@ -298,38 +398,26 @@ sub _dispatch_events
 		my $events = $this->poller->events ($event->read_handle);
 		if ($events)
 		{
-			$event->done (1);
-			$this->events ([grep { !$_->done } @{$this->events}]);
-
-			$this->poller->remove ($event->read_handle);
-
-			if ($event->timer)
-			{
-				$event->timer->cancel();
-				$this->poller->remove ($event->timer->socket);
-			}
+			$this->_remove_event ($event);
 
 			my $set = $event->on_set;
 			&{$set} ($event) if $set;
+			return 1;
 		}
-		elsif ($event->timer)
+
+		if ($event->timer)
 		{
 			my $events = $this->poller->events ($event->timer->socket);
 			if ($events)
 			{
-				$event->done (1);
-				$this->events ([grep { !$_->done } @{$this->events}]);
+				$this->_remove_event ($event);
 
-				$this->poller->remove ($event->read_handle);
-				$this->poller->remove ($event->timer->socket);
-
-				$event->timer->socket->recv;
 				my $timeout = $event->on_timeout;
 				&{$timeout} ($event) if $timeout;
+
+				return 1;
 			}
 		}
-
-		return 1 if $event->done;
 	}
 
 	return 0;
@@ -347,20 +435,14 @@ sub _dispatch_timers
 		my $events = $this->poller->events ($socket);
 		if ($events)
 		{
-			$this->poller->remove ($socket);
-			$socket->recv;
+			$this->_remove_timer ($timer);
 
 			my $timeout = $timer->on_timeout;
 			&{$timeout} ($timer) if ($timeout);
 
-			if (!$timer->timer->running())
+			if ($timer->timer->running())
 			{
-				$timer->done (1);
-				$this->timers ([grep { !$_->done } @{$this->timers}]);
-			}
-			else
-			{
-				$this->poller->add ($socket, ZMQ::Raw->ZMQ_POLLIN);
+				$this->_add_timer ($timer);
 			}
 
 			return 1;
@@ -378,6 +460,8 @@ sub _cancel_timers
 
 	foreach my $timer (@{$this->timers})
 	{
+		$timer->timer->cancel();
+
 		my $socket = $timer->timer->socket;
 		$this->poller->remove ($socket);
 	}

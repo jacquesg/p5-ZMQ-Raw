@@ -12,7 +12,6 @@ BEGIN
 {
 	@attributes = qw/
 		handle
-		done
 		timer
 		loop
 		timeout
@@ -123,7 +122,7 @@ sub new
 	return bless $self, $class;
 }
 
-=for Pod::Coverage done handle timer loop timeout on_readable on_writable on_timeout
+=for Pod::Coverage handle timer loop timeout on_readable on_writable on_timeout
 
 =head1 AUTHOR
 

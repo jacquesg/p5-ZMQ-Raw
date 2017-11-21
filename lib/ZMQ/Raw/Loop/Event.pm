@@ -14,7 +14,6 @@ BEGIN
 		read_handle
 		write_handle
 		loop
-		done
 		timeout
 		timer
 		on_set
@@ -141,7 +140,7 @@ sub set
 	$this->write_handle->send ('');
 }
 
-=for Pod::Coverage done read_handle write_handle loop timeout timer on_set on_timeout
+=for Pod::Coverage read_handle write_handle loop timeout timer on_set on_timeout
 
 =head1 AUTHOR
 

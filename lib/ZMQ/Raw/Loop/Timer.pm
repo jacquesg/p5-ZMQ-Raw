@@ -11,7 +11,6 @@ my @attributes;
 BEGIN
 {
 	@attributes = qw/
-		done
 		timer
 		loop
 		on_timeout
@@ -97,13 +96,22 @@ sub new
 	return bless $self, $class;
 }
 
+
+
 sub cancel
 {
 	my ($this) = @_;
+
 	$this->timer->cancel;
+
+	if ($this->loop)
+	{
+		$this->loop->remove ($this);
+		$this->loop (undef);
+	}
 }
 
-=for Pod::Coverage done timer loop on_timeout
+=for Pod::Coverage timer loop on_timeout
 
 =head1 AUTHOR
 
