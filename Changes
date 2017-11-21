@@ -2,6 +2,10 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Added Loop methods:
+    + remove()
+ - Documentation improvements
+
 0.16      2017-11-20 19:03:39+02:00 Africa/Johannesburg
 
  - Make timers fork() friendlier
