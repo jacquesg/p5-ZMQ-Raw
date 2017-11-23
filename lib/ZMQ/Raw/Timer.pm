@@ -56,6 +56,10 @@ Reset the timer
 
 Cancel the timer
 
+=head2 expire( )
+
+Expire the timer
+
 =head2 socket( )
 
 Get the underlying L<C<ZMQ::Raw::Socket>> that will be readable

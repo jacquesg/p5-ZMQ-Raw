@@ -247,5 +247,28 @@ $loop->add ($restartable);
 $loop->run;
 is $restart_count, 3;
 
+my $expired = 0;
+my $expiree = ZMQ::Raw::Loop::Timer->new (
+	timer => ZMQ::Raw::Timer->new ($ctx, after => 10000),
+	on_timeout => sub
+	{
+		++$expired;
+		$loop->terminate;
+	}
+);
+
+my $expirer = ZMQ::Raw::Loop::Timer->new (
+	timer => ZMQ::Raw::Timer->new ($ctx, after => 10),
+	on_timeout => sub
+	{
+		$expiree->expire();
+	}
+);
+
+$loop->add ($expiree);
+$loop->add ($expirer);
+$loop->run;
+is $expired, 1;
+
 done_testing;
 

@@ -83,6 +83,19 @@ cancel (self)
 		zmq_raw_timers_stop (timer);
 
 void
+expire (self)
+	SV *self
+
+	PREINIT:
+		int rc;
+		zmq_raw_timer *timer;
+
+	CODE:
+		timer = ZMQ_SV_TO_PTR (Timer, self);
+
+		zmq_raw_timers_expire (timer);
+
+void
 reset (self)
 	SV *self
 

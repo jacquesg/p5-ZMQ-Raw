@@ -74,6 +74,10 @@ Cancel the underlying timer.
 
 Reset the underlying timer.
 
+=head2 expire( )
+
+Expire the underlying timer.
+
 =head2 running( )
 
 Check if the timer is running.
@@ -126,6 +130,15 @@ sub reset
 	my ($this) = @_;
 
 	$this->timer->reset;
+}
+
+
+
+sub expire
+{
+	my ($this) = @_;
+
+	$this->timer->expire;
 }
 
 
