@@ -2,6 +2,11 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Added Loop::Timer methods:
+    + reset()
+    + running()
+ - Loop timers are now restartable/reusable
+
 0.17      2017-11-21 14:03:13+02:00 Africa/Johannesburg
 
  - Added Loop methods:
