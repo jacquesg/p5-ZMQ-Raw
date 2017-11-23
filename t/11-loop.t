@@ -192,5 +192,33 @@ $loop->run;
 is $timedout, 3;
 is $eventset, 1;
 
+my $fired = 0;
+my $reset = ZMQ::Raw::Loop::Timer->new (
+	timer => ZMQ::Raw::Timer->new ($ctx, after => 1000),
+	on_timeout => sub
+	{
+		$fired = 1;
+		$loop->terminate();
+	}
+);
+
+my $count = 20;
+$timer = ZMQ::Raw::Loop::Timer->new (
+	timer => ZMQ::Raw::Timer->new ($ctx, after => 100, interval => 100),
+	on_timeout => sub
+	{
+		$reset->reset();
+		if (--$count == 0)
+		{
+			$loop->terminate();
+		}
+	}
+);
+
+$loop->add ($reset);
+$loop->add ($timer);
+$loop->run;
+is $fired, 0;
+
 done_testing;
 

@@ -70,6 +70,10 @@ Create a new loop timer.
 
 Cancel the underlying timer.
 
+=head2 reset( )
+
+Reset the underlying timer.
+
 =cut
 
 sub new
@@ -109,6 +113,15 @@ sub cancel
 		$this->loop->remove ($this);
 		$this->loop (undef);
 	}
+}
+
+
+
+sub reset
+{
+	my ($this) = @_;
+
+	$this->timer->reset;
 }
 
 =for Pod::Coverage timer loop on_timeout
