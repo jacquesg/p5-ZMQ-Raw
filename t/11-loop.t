@@ -220,5 +220,32 @@ $loop->add ($timer);
 $loop->run;
 is $fired, 0;
 
+$reset->reset();
+$loop->add ($reset);
+$loop->run;
+is $fired, 1;
+
+my $restart_count = 0;
+my $restartable = ZMQ::Raw::Loop::Timer->new (
+	timer => ZMQ::Raw::Timer->new ($ctx, after => 100),
+	on_timeout => sub
+	{
+		++$restart_count;
+		$loop->terminate;
+	}
+);
+
+$loop->add ($restartable);
+$loop->run;
+is $restart_count, 1;
+
+$loop->add ($restartable);
+$loop->run;
+is $restart_count, 2;
+
+$loop->add ($restartable);
+$loop->run;
+is $restart_count, 3;
+
 done_testing;
 

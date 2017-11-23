@@ -173,6 +173,11 @@ sub _add_timer
 	$timer->loop ($this);
 	$this->poller->add ($timer->timer->socket, ZMQ::Raw->ZMQ_POLLIN);
 
+	if (!$timer->running)
+	{
+		$timer->reset();
+	}
+
 	push @{$this->timers}, $timer;
 }
 

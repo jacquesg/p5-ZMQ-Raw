@@ -74,6 +74,10 @@ Cancel the underlying timer.
 
 Reset the underlying timer.
 
+=head2 running( )
+
+Check if the timer is running.
+
 =cut
 
 sub new
@@ -122,6 +126,15 @@ sub reset
 	my ($this) = @_;
 
 	$this->timer->reset;
+}
+
+
+
+sub running
+{
+	my ($this) = @_;
+
+	return $this->timer->running;
 }
 
 =for Pod::Coverage timer loop on_timeout
