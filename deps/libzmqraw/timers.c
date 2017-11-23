@@ -138,7 +138,7 @@ static void zmq_raw_timer_destroy (zmq_raw_timer *timer)
 
 	zmq_close (timer->send);
 
-	if (timer->recv)
+	if (timer->recv && !timer->recv_sv)
 		zmq_close (timer->recv);
 
 	free (timer);
@@ -188,6 +188,7 @@ void zmq_raw_timers_reset (zmq_raw_timer *timer)
 
 	zmq_raw_mutex_lock (timer->timers->mutex);
 	zmq_timers_reset (timer->timers->timers, timer->id);
+	while (zmq_recv (timer->recv, NULL, 0, ZMQ_DONTWAIT) == 0);
 	zmq_raw_mutex_unlock (timer->timers->mutex);
 }
 
@@ -244,7 +245,6 @@ void zmq_raw_timer_set_sv (zmq_raw_timer *timer, void *sv)
 	assert (timer->recv_sv == NULL);
 
 	timer->recv_sv = sv;
-	timer->recv = NULL;
 }
 
 void *zmq_raw_timer_get_sv (zmq_raw_timer *timer)
