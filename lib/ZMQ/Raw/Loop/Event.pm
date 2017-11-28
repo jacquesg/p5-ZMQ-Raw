@@ -137,7 +137,7 @@ sub set
 {
 	my ($this) = @_;
 
-	$this->write_handle->send ('');
+	$this->write_handle->send ('', ZMQ::Raw->ZMQ_DONTWAIT);
 }
 
 =for Pod::Coverage read_handle write_handle loop timeout timer on_set on_timeout

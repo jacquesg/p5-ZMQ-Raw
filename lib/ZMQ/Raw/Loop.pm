@@ -18,6 +18,8 @@ BEGIN
 		promises
 		events
 		terminated
+
+		tevent
 	/;
 
 	no strict 'refs';
@@ -92,22 +94,31 @@ sub new
 		promises => [],
 	};
 
-	return bless $self, $class;
+	my $obj = bless $self, $class;
+	$obj->tevent (ZMQ::Raw::Loop::Event->new ($context,
+			on_set => sub
+			{
+				$obj->terminated (1);
+			}
+		)
+	);
+	return $obj;
 }
+
+
 
 sub run
 {
 	my ($this) = @_;
 
 	$this->terminated (0);
-	while (!$this->terminated)
+
+	$this->add ($this->tevent);
+	while (!$this->terminated && $this->poller->size > 1)
 	{
-		if (!$this->run_one)
-		{
-			# nothing left, terminate
-			$this->terminate();
-		}
+		$this->run_one;
 	}
+	$this->remove ($this->tevent);
 
 	$this->_cancel_timers();
 	$this->_cancel_events();
@@ -123,10 +134,10 @@ sub run_one
 
 	if ($this->poller->size)
 	{
-		if ($this->poller->wait (-1))
+		my $count = $this->poller->wait (-1);
+		if ($count)
 		{
 			$this->_dispatch_events() || $this->_dispatch_handles() || $this->_dispatch_timers();
-
 			$this->promises ([grep { $_->status == ZMQ::Raw::Loop::Promise->PLANNED } @{$this->promises}]);
 		}
 
@@ -529,10 +540,11 @@ sub _clear_promises
 sub terminate
 {
 	my ($this) = @_;
-	$this->terminated (1);
+
+	$this->tevent->set;
 }
 
-=for Pod::Coverage context handles events poller timers promises terminated
+=for Pod::Coverage context handles events poller timers promises terminated tevent
 
 =head1 AUTHOR
 
