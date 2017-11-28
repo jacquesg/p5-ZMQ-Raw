@@ -119,7 +119,6 @@ sub cancel
 	if ($this->loop)
 	{
 		$this->loop->remove ($this);
-		$this->loop (undef);
 	}
 }
 
@@ -130,6 +129,12 @@ sub reset
 	my ($this) = @_;
 
 	$this->timer->reset;
+
+	if ($this->loop)
+	{
+		$this->loop->remove ($this);
+		$this->loop->add ($this);
+	}
 }
 
 
