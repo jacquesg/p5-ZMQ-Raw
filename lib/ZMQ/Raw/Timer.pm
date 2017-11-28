@@ -44,6 +44,28 @@ sub new
 	return $class->_new ($ctx, $args{after} || 0, $args{interval});
 }
 
+
+
+sub cancel
+{
+	my ($this) = @_;
+	$this->_cancel();
+
+AGAIN:
+	goto AGAIN if (defined ($this->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT)));
+}
+
+
+
+sub reset
+{
+	my ($this) = @_;
+	$this->_reset();
+
+AGAIN:
+	goto AGAIN if (defined ($this->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT)));
+}
+
 =head2 id ()
 
 Get the timer's id

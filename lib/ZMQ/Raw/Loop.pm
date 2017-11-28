@@ -112,12 +112,14 @@ sub run
 	my ($this) = @_;
 
 	$this->terminated (0);
-
+	$this->tevent->reset();
 	$this->add ($this->tevent);
+
 	while (!$this->terminated && $this->poller->size > 1)
 	{
 		$this->run_one;
 	}
+
 	$this->remove ($this->tevent);
 
 	$this->_cancel_timers();
@@ -315,7 +317,6 @@ sub _remove_handle
 			{
 				$this->poller->remove ($timer->socket);
 				$timer->cancel();
-				$timer->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT);
 			}
 
 			next;
@@ -339,14 +340,12 @@ sub _remove_event
 		if ($e == $event)
 		{
 			$this->poller->remove ($event->read_handle);
-			$event->read_handle->recv (ZMQ::Raw->ZMQ_DONTWAIT);
 
 			my $timer = $event->timer;
 			if ($timer)
 			{
-				$timer->cancel();
-				$timer->socket->recv (ZMQ::Raw->ZMQ_DONTWAIT);
 				$this->poller->remove ($timer->socket);
+				$timer->cancel();
 			}
 
 			next;
@@ -414,6 +413,7 @@ sub _dispatch_events
 		my $events = $this->poller->events ($event->read_handle);
 		if ($events)
 		{
+			$event->reset();
 			$this->_remove_event ($event);
 
 			my $set = $event->on_set;
@@ -426,6 +426,7 @@ sub _dispatch_events
 			my $events = $this->poller->events ($event->timer->socket);
 			if ($events)
 			{
+				$event->reset();
 				$this->_remove_event ($event);
 
 				my $timeout = $event->on_timeout;
@@ -474,15 +475,12 @@ sub _cancel_timers
 {
 	my ($this) = @_;
 
+AGAIN:
 	foreach my $timer (@{$this->timers})
 	{
-		$timer->timer->cancel();
-
-		my $socket = $timer->timer->socket;
-		$this->poller->remove ($socket);
+		$timer->cancel();
+		goto AGAIN;
 	}
-
-	$this->timers ([]);
 }
 
 

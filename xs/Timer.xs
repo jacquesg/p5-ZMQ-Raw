@@ -70,7 +70,7 @@ running (self)
 		XSRETURN_NO;
 
 void
-cancel (self)
+_cancel (self)
 	SV *self
 
 	PREINIT:
@@ -96,7 +96,7 @@ expire (self)
 		zmq_raw_timers_expire (timer);
 
 void
-reset (self)
+_reset (self)
 	SV *self
 
 	PREINIT:
