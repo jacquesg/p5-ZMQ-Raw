@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.20      2017-11-29 15:48:29+02:00 Africa/Johannesburg
+
  - Fix a potential destruction order deadlock problem
 
 0.19      2017-11-29 07:13:35+02:00 Africa/Johannesburg
