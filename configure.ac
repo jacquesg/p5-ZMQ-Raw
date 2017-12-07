@@ -144,8 +144,11 @@ else
     AC_MSG_RESULT([no])
 fi
 
-# By default compiling with -Werror except OSX.
-libzmq_werror="yes"
+# By default compiling with -Werror except OSX and on Solaris when building
+# with libsodium.
+AC_ARG_ENABLE([Werror],
+    [AS_HELP_STRING([--disable-Werror], [disable Werror compiler flag [default=enabled]])],
+    [libzmq_werror=$enableval], [libzmq_werror=yes])
 
 # By default use DSO visibility
 libzmq_dso_visibility="yes"
@@ -229,6 +232,10 @@ case "${host_os}" in
         AC_LANG_PUSH([C++])
         LIBZMQ_CHECK_LANG_FLAG_PREPEND([-Wno-uninitialized])
         AC_LANG_POP([C++])
+        ;;
+    *haiku*)
+        AC_DEFINE(ZMQ_HAVE_HAIKU, 1, [Have Haiku OS])
+        AC_CHECK_LIB(network, socket)
         ;;
     *netbsd*)
         # Define on NetBSD to enable all library features
@@ -617,7 +624,7 @@ AC_LANG_POP([C++])
 
 # Checks for library functions.
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS(perror gettimeofday clock_gettime memset socket getifaddrs freeifaddrs fork posix_memalign mkdtemp)
+AC_CHECK_FUNCS(perror gettimeofday clock_gettime memset socket getifaddrs freeifaddrs fork posix_memalign mkdtemp accept4)
 AC_CHECK_HEADERS([alloca.h])
 
 # pthread_setname is non-posix, and there are at least 4 different implementations
