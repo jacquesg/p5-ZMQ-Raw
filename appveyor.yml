@@ -58,35 +58,42 @@ install:
 build_script:
  - set PATH=%PERL526%\perl\bin;%PERL526%\perl\site\bin;%PERL526%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-526
+ - perl -V
  - perl Makefile.PL
  - gmake test
 
  - set PATH=%PERL524%\perl\bin;%PERL524%\perl\site\bin;%PERL524%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-524
+ - perl -V
  - perl Makefile.PL
  - dmake test
 
  - set PATH=%PERL522%\perl\bin;%PERL522%\perl\site\bin;%PERL522%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-522
+ - perl -V
  - perl Makefile.PL
  - dmake test
 
  - set PATH=%PERL520%\perl\bin;%PERL520%\perl\site\bin;%PERL520%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-520
+ - perl -V
  - perl Makefile.PL
  - dmake test
 
  - set PATH=%PERL518%\perl\bin;%PERL518%\perl\site\bin;%PERL518%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-518
+ - perl -V
  - perl Makefile.PL
  - dmake test
 
  - set PATH=%PERL516%\perl\bin;%PERL516%\perl\site\bin;%PERL516%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-516
+ - perl -V
  - perl Makefile.PL
  - dmake test
 
  - set PATH=%PERL514%\perl\bin;%PERL514%\perl\site\bin;%PERL514%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-514
+ - perl -V
  - perl Makefile.PL
  - dmake test
