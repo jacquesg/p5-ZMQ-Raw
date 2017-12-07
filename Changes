@@ -2,6 +2,10 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Update to libzmq 737ea1f60
+ - Added draft event constants
+ - Add -pthread to the ccflags
+
 0.20      2017-11-29 15:48:29+02:00 Africa/Johannesburg
 
  - Fix a potential destruction order deadlock problem
