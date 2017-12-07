@@ -48,6 +48,10 @@ if ($is_gcc)
 		$ld =~ s/gcc/g++/;
 	}
 
+	if (!$is_windows)
+	{
+		$ccflags .= ' -pthread';
+	}
 	$lib .= ' -lpthread';
 
 	if ($is_linux || $is_solaris)
