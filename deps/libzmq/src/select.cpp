@@ -59,7 +59,7 @@ zmq::select_t::select_t (const zmq::ctx_t &ctx_) :
 {
 #if defined ZMQ_HAVE_WINDOWS
     for (size_t i = 0; i < fd_family_cache_size; ++i)
-        fd_family_cache [i] = std::make_pair (retired_fd, 0);
+        fd_family_cache [i] = std::make_pair ((fd_t)retired_fd, 0);
 #endif
 }
 
