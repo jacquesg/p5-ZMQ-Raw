@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Improved Poll implementation
+
 0.21      2017-12-07 10:38:29+02:00 Africa/Johannesburg
 
  - Update to libzmq 737ea1f60
