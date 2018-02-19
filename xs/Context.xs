@@ -14,11 +14,9 @@ new (class)
 		ctx->context = zmq_ctx_new();
 		ctx->reference_count = 1;
 		ctx->timers = NULL;
-		ZMQ_NEW_OBJ (RETVAL, "ZMQ::Raw::Context", ctx);
 
-		#ifdef USE_ITHREADS
-		xs_object_magic_attach_struct_with_table (aTHX_ SvRV (RETVAL), ctx, &context_mg_vtbl, MGf_DUP);
-		#endif
+		ZMQ_NEW_REFCOUNTED_OBJ (RETVAL, "ZMQ::Raw::Context",
+			ctx, zmq_raw_ctx_dup);
 
 	OUTPUT: RETVAL
 

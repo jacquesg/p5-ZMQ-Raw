@@ -130,27 +130,7 @@ static int zmq_raw_ctx_dup (pTHX_ MAGIC *magic, CLONE_PARAMS *param)
 	zmq_raw_mutex_unlock (context->mutex);
 	return 0;
 }
-#else
-#define zmq_raw_ctx_dup NULL
 #endif
-
-STATIC MGVTBL context_mg_vtbl =
-{
-	NULL, /* get */
-	NULL, /* set */
-	NULL, /* len */
-	NULL, /* clear */
-	NULL, /* free */
-#if MGf_COPY
-	NULL, /* copy */
-#endif /* MGf_COPY */
-#if MGf_DUP
-	zmq_raw_ctx_dup, /* dup */
-#endif /* MGf_DUP */
-#if MGf_LOCAL
-	NULL, /* local */
-#endif /* MGf_LOCAL */
-};
 
 STATIC void xs_object_magic_attach_struct_with_table (pTHX_ SV *sv, void *ptr, MGVTBL *table, int flags)
 {
@@ -183,28 +163,38 @@ STATIC void *xs_object_magic_get_struct (pTHX_ SV *sv)
 	return (mg) ? mg -> mg_ptr : NULL;
 }
 
+
 #define ZMQ_SV_TO_MAGIC(SV) \
-	xs_object_magic_get_struct(aTHX_ SvRV(SV))
+	xs_object_magic_get_struct(aTHX_ SvRV (SV))
 
-#define ZMQ_NEW_OBJ(rv, package, sv)				\
-	STMT_START {						\
-		(rv) = sv_setref_pv(newSV(0), package, sv);	\
+#define ZMQ_NEW_OBJ(rv, package, sv)                   \
+	STMT_START {                                       \
+		(rv) = sv_setref_pv (newSV(0), package, sv);   \
 	} STMT_END
 
-#define ZMQ_NEW_OBJ_WITH_MAGIC(rv, package, sv, magic)		\
-	STMT_START {						\
-		(rv) = sv_setref_pv(newSV(0), package, sv);	\
-								\
-		xs_object_magic_attach_struct(			\
-			aTHX_ SvRV(rv), SvREFCNT_inc_NN(magic)	\
-		);						\
+#ifdef USE_ITHREADS
+#define ZMQ_NEW_REFCOUNTED_OBJ(rv, package, sv, dup)               \
+	ZMQ_NEW_OBJ (rv, package, sv);                                 \
+	STMT_START {                                                   \
+		STATIC MGVTBL __FILE__##__LINE__##_vtbl =                  \
+		{                                                          \
+			NULL, NULL, NULL, NULL, NULL,                          \
+			NULL, dup, NULL                                        \
+		};                                                         \
+		xs_object_magic_attach_struct_with_table (aTHX_ SvRV (rv), \
+			sv, &__FILE__##__LINE__##_vtbl, MGf_DUP);              \
 	} STMT_END
 
-#define ZMQ_OBJ_SET_MAGIC(sv, magic) \
-	STMT_START {						\
-		xs_object_magic_attach_struct(			\
-			aTHX_ SvRV(sv), SvREFCNT_inc_NN(magic)	\
-		);						\
+#else
+#define ZMQ_NEW_REFCOUNTED_OBJ(rv, package, sv, dup)               \
+	ZMQ_NEW_OBJ (rv, package, sv);
+#endif
+
+#define ZMQ_NEW_OBJ_WITH_MAGIC(rv, package, sv, magic) \
+	STMT_START {                                       \
+		(rv) = sv_setref_pv (newSV(0), package, sv);   \
+		xs_object_magic_attach_struct (aTHX_ SvRV (rv), \
+			SvREFCNT_inc_NN (magic)); \
 	} STMT_END
 
 
