@@ -30,7 +30,9 @@
 typedef struct
 {
 	void *context;
-	void *counter;
+	zmq_raw_mutex *mutex;
+	zmq_raw_timers *timers;
+	int reference_count;
 } zmq_raw_context;
 
 typedef struct
@@ -65,7 +67,8 @@ typedef struct
 
 typedef struct my_cxt_t
 {
-	zmq_raw_context *contexts;
+	zmq_raw_timers *timers;
+	zmq_raw_mutex *context_mutex;
 } my_cxt_t;
 
 STATIC PerlIO *zmq_get_socket_io (SV *sv)
@@ -117,15 +120,56 @@ STATIC MGVTBL null_mg_vtbl =
 #endif /* MGf_LOCAL */
 };
 
-STATIC void xs_object_magic_attach_struct(pTHX_ SV *sv, void *ptr)
+
+#ifdef USE_ITHREADS
+static int zmq_raw_ctx_dup (pTHX_ MAGIC *magic, CLONE_PARAMS *param)
 {
-	sv_magicext(sv, NULL, PERL_MAGIC_ext, &null_mg_vtbl, (const char *)ptr, 0);
+	zmq_raw_context *context = (zmq_raw_context *)magic->mg_ptr;
+	zmq_raw_mutex_lock (context->mutex);
+	++context->reference_count;
+	zmq_raw_mutex_unlock (context->mutex);
+	return 0;
+}
+#else
+#define zmq_raw_ctx_dup NULL
+#endif
+
+STATIC MGVTBL context_mg_vtbl =
+{
+	NULL, /* get */
+	NULL, /* set */
+	NULL, /* len */
+	NULL, /* clear */
+	NULL, /* free */
+#if MGf_COPY
+	NULL, /* copy */
+#endif /* MGf_COPY */
+#if MGf_DUP
+	zmq_raw_ctx_dup, /* dup */
+#endif /* MGf_DUP */
+#if MGf_LOCAL
+	NULL, /* local */
+#endif /* MGf_LOCAL */
+};
+
+STATIC void xs_object_magic_attach_struct_with_table (pTHX_ SV *sv, void *ptr, MGVTBL *table, int flags)
+{
+	MAGIC *magic = sv_magicext (sv, NULL, PERL_MAGIC_ext, table, (const char *)ptr, 0);
+	magic->mg_flags |= flags;
 }
 
-STATIC void *xs_object_magic_get_struct(pTHX_ SV *sv) {
+STATIC void xs_object_magic_attach_struct(pTHX_ SV *sv, void *ptr)
+{
+	xs_object_magic_attach_struct_with_table (aTHX_ sv, ptr, &null_mg_vtbl, 0);
+}
+
+
+STATIC void *xs_object_magic_get_struct (pTHX_ SV *sv)
+{
 	MAGIC *mg = NULL;
 
-	if (SvTYPE(sv) >= SVt_PVMG) {
+	if (SvTYPE (sv) >= SVt_PVMG)
+	{
 		MAGIC *tmp;
 
 		for (tmp = SvMAGIC(sv); tmp;
@@ -289,33 +333,8 @@ STATIC void *zmq_sv_to_ptr (const char *type, SV *sv, const char *file, int line
 		}                                                                         \
     } STMT_END
 
-static zmq_raw_timers *timers;
-static zmq_raw_mutex *timers_mutex;
-STATIC void zmq_raw_timers_cleanup (void)
-{
-	#ifndef _WIN32
-	zmq_raw_timers_destroy (timers);
-	#endif
-
-	zmq_raw_mutex_destroy (timers_mutex);
-}
-
-#define MY_CXT_KEY "ZMQ::Raw::_guts"
-#define MAX_CONTEXT_COUNT 64
-static zmq_raw_context contexts[MAX_CONTEXT_COUNT];
-
-START_MY_CXT
 
 MODULE = ZMQ::Raw               PACKAGE = ZMQ::Raw
-
-BOOT:
-{
-	MY_CXT_INIT;
-	MY_CXT.contexts = contexts;
-
-	timers_mutex = zmq_raw_mutex_create();
-	assert (timers_mutex);
-}
 
 INCLUDE: const-xs-constant.inc
 
