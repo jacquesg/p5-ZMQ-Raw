@@ -31,6 +31,11 @@
 
 int main (void)
 {
+    if (!is_tipc_available ()) {
+        printf ("TIPC environment unavailable, skipping test\n");
+        return 77;
+    }
+
     fprintf (stderr, "test_reqrep_tipc running...\n");
 
     void *ctx = zmq_init (1);
@@ -57,5 +62,5 @@ int main (void)
     rc = zmq_ctx_term (ctx);
     assert (rc == 0);
 
-    return 0 ;
+    return 0;
 }

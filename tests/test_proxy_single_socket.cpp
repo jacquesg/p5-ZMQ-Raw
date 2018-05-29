@@ -30,16 +30,14 @@
 #include "testutil.hpp"
 
 
-
 // This is our server task.
 // It runs a proxy with a single REP socket as both frontend and backend.
 
-void
-server_task (void *ctx)
+void server_task (void *ctx_)
 {
     size_t len = MAX_SOCKET_STRING;
     char my_endpoint[MAX_SOCKET_STRING];
-    void *rep = zmq_socket (ctx, ZMQ_REP);
+    void *rep = zmq_socket (ctx_, ZMQ_REP);
     assert (rep);
     int rc = zmq_bind (rep, "tcp://127.0.0.1:*");
     assert (rc == 0);
@@ -47,7 +45,7 @@ server_task (void *ctx)
     assert (rc == 0);
 
     // Control socket receives terminate command from main over inproc
-    void *control = zmq_socket (ctx, ZMQ_REQ);
+    void *control = zmq_socket (ctx_, ZMQ_REQ);
     assert (control);
     rc = zmq_connect (control, "inproc://control");
     assert (rc == 0);
@@ -75,7 +73,7 @@ int main (void)
     void *ctx = zmq_ctx_new ();
     assert (ctx);
 
-    void *server_thread = zmq_threadstart(&server_task, ctx);
+    void *server_thread = zmq_threadstart (&server_task, ctx);
 
     // Control socket receives terminate command from main over inproc
     void *control = zmq_socket (ctx, ZMQ_REP);
@@ -92,15 +90,15 @@ int main (void)
     assert (rc == 0);
 
     char buf[255];
-    rc = zmq_send(req, "msg1", 4, 0);
+    rc = zmq_send (req, "msg1", 4, 0);
     assert (rc == 4);
-    rc = zmq_recv(req, buf, 255, 0);
+    rc = zmq_recv (req, buf, 255, 0);
     assert (rc == 4);
     assert (memcmp (buf, "msg1", 4) == 0);
 
-    rc = zmq_send(req, "msg22", 5, 0);
+    rc = zmq_send (req, "msg22", 5, 0);
     assert (rc == 5);
-    rc = zmq_recv(req, buf, 255, 0);
+    rc = zmq_recv (req, buf, 255, 0);
     assert (rc == 5);
     assert (memcmp (buf, "msg22", 5) == 0);
 

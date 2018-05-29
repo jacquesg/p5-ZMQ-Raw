@@ -9,18 +9,30 @@ Problem: X is broken
 Solution: do Y and Z to fix X
 ```
 
+Please try to have the code changes conform to our coding style. For your
+convenience, you can install clang-format (at least version 5.0) and then
+run ```make clang-format-check```. Don't fix existing issues, if any - just
+make sure your changes are compliant. ```make clang-format-diff``` will
+automatically apply the required changes.
+To set a specific clang-format binary with autotools, you can for example
+run: ```./configure CLANG_FORMAT=clang-format-5.0```
+
 Please avoid sending a pull request with recursive merge nodes, as they
 are impossible to fix once merged. Please rebase your branch on
 zeromq/libzmq master instead of merging it.
 
+```
 git remote add upstream git@github.com:zeromq/libzmq.git
 git fetch upstream
 git rebase upstream/master
 git push -f
+```
 
 In case you already merged instead of rebasing you can drop the merge commit.
 
+```
 git rebase -i HEAD~10
+```
 
 Now, find your merge commit and mark it as drop and save. Finally rebase!
 

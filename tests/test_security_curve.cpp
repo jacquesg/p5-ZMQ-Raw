@@ -29,73 +29,112 @@
 
 #include "testutil.hpp"
 #include "testutil_security.hpp"
-#if defined (ZMQ_HAVE_WINDOWS)
-#  include <winsock2.h>
-#  include <ws2tcpip.h>
-#  include <stdexcept>
-#  define close closesocket
+#if defined(ZMQ_HAVE_WINDOWS)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdexcept>
+#define close closesocket
 #else
-#  include <sys/socket.h>
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-#  include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #endif
+#include <unity.h>
 
 #include "../src/tweetnacl.h"
 #include "../src/curve_client_tools.hpp"
 #include "../src/random.hpp"
 
+char error_message_buffer[256];
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
+const char *zmq_errno_message ()
+{
+    snprintf (error_message_buffer, sizeof (error_message_buffer),
+              "errno=%i (%s)", zmq_errno (), zmq_strerror (zmq_errno ()));
+    return error_message_buffer;
+}
+
+#define TEST_ASSERT_ZMQ_ERRNO(condition)                                       \
+    TEST_ASSERT_MESSAGE ((condition), zmq_errno_message ())
+
+void *ctx;
+void *handler;
+void *zap_thread;
+void *server;
+void *server_mon;
+char my_endpoint[MAX_SOCKET_STRING];
+
+void setUp ()
+{
+    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
+                                   &server_mon, my_endpoint);
+}
+
+void tearDown ()
+{
+    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
+                                      handler);
+}
+
+const int timeout = 250;
+
 const char large_routing_id[] = "0123456789012345678901234567890123456789"
-                              "0123456789012345678901234567890123456789"
-                              "0123456789012345678901234567890123456789"
-                              "0123456789012345678901234567890123456789"
-                              "0123456789012345678901234567890123456789"
-                              "0123456789012345678901234567890123456789"
-                              "012345678901234";
+                                "0123456789012345678901234567890123456789"
+                                "0123456789012345678901234567890123456789"
+                                "0123456789012345678901234567890123456789"
+                                "0123456789012345678901234567890123456789"
+                                "0123456789012345678901234567890123456789"
+                                "012345678901234";
 
-static void zap_handler_large_routing_id (void *ctx)
+static void zap_handler_large_routing_id (void *ctx_)
 {
-    zap_handler_generic (ctx, zap_ok, large_routing_id);
+    zap_handler_generic (ctx_, zap_ok, large_routing_id);
 }
 
-void expect_new_client_curve_bounce_fail (void *ctx,
-                                          char *server_public,
-                                          char *client_public,
-                                          char *client_secret,
-                                          char *my_endpoint,
-                                          void *server,
-                                          void **client_mon = NULL,
-                                          int expected_client_event = 0,
-                                          int expected_client_value = 0)
+void expect_new_client_curve_bounce_fail (void *ctx_,
+                                          char *server_public_,
+                                          char *client_public_,
+                                          char *client_secret_,
+                                          char *my_endpoint_,
+                                          void *server_,
+                                          void **client_mon_ = NULL,
+                                          int expected_client_event_ = 0,
+                                          int expected_client_value_ = 0)
 {
-    curve_client_data_t curve_client_data = {server_public, client_public,
-                                             client_secret};
+    curve_client_data_t curve_client_data = {server_public_, client_public_,
+                                             client_secret_};
     expect_new_client_bounce_fail (
-      ctx, my_endpoint, server, socket_config_curve_client, &curve_client_data,
-      client_mon, expected_client_event, expected_client_value);
+      ctx_, my_endpoint_, server_, socket_config_curve_client,
+      &curve_client_data, client_mon_, expected_client_event_,
+      expected_client_value_);
 }
 
-void test_null_key (void *ctx,
-                    void *server,
-                    void *server_mon,
-                    char *my_endpoint,
-                    char *server_public,
-                    char *client_public,
-                    char *client_secret)
+void test_null_key (void *ctx_,
+                    void *server_,
+                    void *server_mon_,
+                    char *my_endpoint_,
+                    char *server_public_,
+                    char *client_public_,
+                    char *client_secret_)
 {
-    expect_new_client_curve_bounce_fail (ctx, server_public, client_public,
-                                         client_secret, my_endpoint, server);
+    expect_new_client_curve_bounce_fail (ctx_, server_public_, client_public_,
+                                         client_secret_, my_endpoint_, server_);
 
 #ifdef ZMQ_BUILD_DRAFT_API
     int handshake_failed_encryption_event_count =
-      expect_monitor_event_multiple (server_mon,
+      expect_monitor_event_multiple (server_mon_,
                                      ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL,
                                      ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
 
-    // handshake_failed_encryption_event_count should be at least two because 
+    // handshake_failed_encryption_event_count should be at least two because
     // expect_bounce_fail involves two exchanges
-    // however, with valgrind we see only one event (maybe the next one takes 
-    // very long, or does not happen at all because something else takes very 
+    // however, with valgrind we see only one event (maybe the next one takes
+    // very long, or does not happen at all because something else takes very
     // long)
 
     fprintf (stderr,
@@ -106,8 +145,7 @@ void test_null_key (void *ctx,
 #endif
 }
 
-void test_curve_security_with_valid_credentials (
-  void *ctx, char *my_endpoint, void *server, void *server_mon, int timeout)
+void test_curve_security_with_valid_credentials ()
 {
     curve_client_data_t curve_client_data = {
       valid_server_public, valid_client_public, valid_client_secret};
@@ -117,7 +155,7 @@ void test_curve_security_with_valid_credentials (
                                  &curve_client_data, &client_mon);
     bounce (server, client);
     int rc = zmq_close (client);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 
 #ifdef ZMQ_BUILD_DRAFT_API
     int event = get_monitor_event_with_timeout (server_mon, NULL, NULL, -1);
@@ -131,18 +169,15 @@ void test_curve_security_with_valid_credentials (
     assert_no_more_monitor_events_with_timeout (client_mon, timeout);
 
     rc = zmq_close (client_mon);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 #endif
 }
 
-void test_curve_security_with_bogus_client_credentials (
-  void *ctx, char *my_endpoint, void *server, void *server_mon, int timeout)
+void test_curve_security_with_bogus_client_credentials ()
 {
-    LIBZMQ_UNUSED (timeout);
-
     //  This must be caught by the ZAP handler
-    char bogus_public [41];
-    char bogus_secret [41];
+    char bogus_public[41];
+    char bogus_secret[41];
     zmq_curve_keypair (bogus_public, bogus_secret);
 
     expect_new_client_curve_bounce_fail (ctx, valid_server_public, bogus_public,
@@ -155,72 +190,66 @@ void test_curve_security_with_bogus_client_credentials (
 #endif
     );
 
-    int server_event_count = 0; 
+    int server_event_count = 0;
 #ifdef ZMQ_BUILD_DRAFT_API
     server_event_count = expect_monitor_event_multiple (
       server_mon, ZMQ_EVENT_HANDSHAKE_FAILED_AUTH, 400);
-    assert (server_event_count <= 1);
+    TEST_ASSERT_LESS_OR_EQUAL_INT (1, server_event_count);
 #endif
 
     // there may be more than one ZAP request due to repeated attempts by the client
-    assert (0 == server_event_count
-            || 1 <= zmq_atomic_counter_value (zap_requests_handled));
+    TEST_ASSERT (0 == server_event_count
+                 || 1 <= zmq_atomic_counter_value (zap_requests_handled));
 }
 
-void expect_zmtp_mechanism_mismatch (void *client,
-                                     char *my_endpoint,
-                                     void *server,
-                                     void *server_mon)
+void expect_zmtp_mechanism_mismatch (void *client_,
+                                     char *my_endpoint_,
+                                     void *server_,
+                                     void *server_mon_)
 {
     //  This must be caught by the curve_server class, not passed to ZAP
-    int rc = zmq_connect (client, my_endpoint);
-    assert (rc == 0);
-    expect_bounce_fail (server, client);
-    close_zero_linger (client);
+    int rc = zmq_connect (client_, my_endpoint_);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
+    expect_bounce_fail (server_, client_);
+    close_zero_linger (client_);
 
 #ifdef ZMQ_BUILD_DRAFT_API
-    expect_monitor_event_multiple (server_mon,
+    expect_monitor_event_multiple (server_mon_,
                                    ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL,
                                    ZMQ_PROTOCOL_ERROR_ZMTP_MECHANISM_MISMATCH);
 #endif
 
-    assert (0 == zmq_atomic_counter_value (zap_requests_handled));
+    TEST_ASSERT_EQUAL_INT (0, zmq_atomic_counter_value (zap_requests_handled));
 }
 
-void test_curve_security_with_null_client_credentials (void *ctx,
-                                                       char *my_endpoint,
-                                                       void *server,
-                                                       void *server_mon)
+void test_curve_security_with_null_client_credentials ()
 {
     void *client = zmq_socket (ctx, ZMQ_DEALER);
-    assert (client);
+    TEST_ASSERT_NOT_NULL (client);
 
     expect_zmtp_mechanism_mismatch (client, my_endpoint, server, server_mon);
 }
 
-void test_curve_security_with_plain_client_credentials (void *ctx,
-                                                        char *my_endpoint,
-                                                        void *server,
-                                                        void *server_mon)
+void test_curve_security_with_plain_client_credentials ()
 {
     void *client = zmq_socket (ctx, ZMQ_DEALER);
-    assert (client);
+    TEST_ASSERT_NOT_NULL (client);
     int rc = zmq_setsockopt (client, ZMQ_PLAIN_USERNAME, "admin", 5);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
     rc = zmq_setsockopt (client, ZMQ_PLAIN_PASSWORD, "password", 8);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 
     expect_zmtp_mechanism_mismatch (client, my_endpoint, server, server_mon);
 }
 
-int connect_vanilla_socket (char *my_endpoint)
+fd_t connect_vanilla_socket (char *my_endpoint_)
 {
-    int s;
+    fd_t s;
     struct sockaddr_in ip4addr;
 
     unsigned short int port;
-    int rc = sscanf (my_endpoint, "tcp://127.0.0.1:%hu", &port);
-    assert (rc == 1);
+    int rc = sscanf (my_endpoint_, "tcp://127.0.0.1:%hu", &port);
+    TEST_ASSERT_EQUAL_INT (1, rc);
 
     ip4addr.sin_family = AF_INET;
     ip4addr.sin_port = htons (port);
@@ -232,16 +261,14 @@ int connect_vanilla_socket (char *my_endpoint)
 
     s = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     rc = connect (s, (struct sockaddr *) &ip4addr, sizeof (ip4addr));
-    assert (rc > -1);
+    TEST_ASSERT_GREATER_THAN_INT (-1, rc);
     return s;
 }
 
-void test_curve_security_unauthenticated_message (char *my_endpoint,
-                                                  void *server,
-                                                  int timeout)
+void test_curve_security_unauthenticated_message ()
 {
     // Unauthenticated messages from a vanilla socket shouldn't be received
-    int s = connect_vanilla_socket(my_endpoint);
+    fd_t s = connect_vanilla_socket (my_endpoint);
     // send anonymous ZMTP/1.0 greeting
     send (s, "\x01\x00", 2, 0);
     // send sneaky message that shouldn't be received
@@ -249,52 +276,43 @@ void test_curve_security_unauthenticated_message (char *my_endpoint,
 
     zmq_setsockopt (server, ZMQ_RCVTIMEO, &timeout, sizeof (timeout));
     char *buf = s_recv (server);
-    if (buf != NULL) {
-        printf ("Received unauthenticated message: %s\n", buf);
-        assert (buf == NULL);
-    }
+    TEST_ASSERT_NULL_MESSAGE (buf, "Received unauthenticated message");
     close (s);
 }
 
-void send_all (int fd, const char *data, size_t size)
+void send_all (fd_t fd_, const char *data_, socket_size_t size_)
 {
-    while (size > 0) {
-        int res = send (fd, data, size, 0);
-        assert (res > 0);
-        size -= res;
-        data += res;
+    while (size_ > 0) {
+        int res = send (fd_, data_, size_, 0);
+        TEST_ASSERT_GREATER_THAN_INT (0, res);
+        size_ -= res;
+        data_ += res;
     }
 }
 
-template <size_t N> void send (int fd, const char (&data) [N])
+template <size_t N> void send (fd_t fd_, const char (&data_)[N])
 {
-    send_all (fd, data, N - 1);
+    send_all (fd_, data_, N - 1);
 }
 
-void send_greeting(int s)
+void send_greeting (fd_t s_)
 {
-    send (s, "\xff\0\0\0\0\0\0\0\0\x7f"); // signature
-    send (s, "\x03\x00"); // version 3.0
-    send (s, "CURVE\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"); // mechanism CURVE
-    send (s, "\0"); // as-server == false
-    send (s, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
+    send (s_, "\xff\0\0\0\0\0\0\0\0\x7f");            // signature
+    send (s_, "\x03\x00");                            // version 3.0
+    send (s_, "CURVE\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"); // mechanism CURVE
+    send (s_, "\0");                                  // as-server == false
+    send (s_, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
 }
 
-void test_curve_security_invalid_hello_wrong_length (char *my_endpoint,
-                                                     void *server,
-                                                     void *server_mon,
-                                                     int timeout)
+void test_curve_security_invalid_hello_wrong_length ()
 {
-    LIBZMQ_UNUSED (server);
-    LIBZMQ_UNUSED (timeout);
-
-    int s = connect_vanilla_socket (my_endpoint);
+    fd_t s = connect_vanilla_socket (my_endpoint);
 
     // send GREETING
     send_greeting (s);
 
     // send CURVE HELLO of wrong size
-    send(s, "\x04\x06\x05HELLO");
+    send (s, "\x04\x06\x05HELLO");
 
 #ifdef ZMQ_BUILD_DRAFT_API
     expect_monitor_event_multiple (
@@ -325,47 +343,41 @@ zmq::curve_client_tools_t make_curve_client_tools ()
 }
 
 #ifndef htonll
-uint64_t htonll (uint64_t value)
+uint64_t htonll (uint64_t value_)
 {
     // The answer is 42
     static const int num = 42;
 
     // Check the endianness
     if (*reinterpret_cast<const char *> (&num) == num) {
-        const uint32_t high_part = htonl (static_cast<uint32_t> (value >> 32));
+        const uint32_t high_part = htonl (static_cast<uint32_t> (value_ >> 32));
         const uint32_t low_part =
-          htonl (static_cast<uint32_t> (value & 0xFFFFFFFFLL));
+          htonl (static_cast<uint32_t> (value_ & 0xFFFFFFFFLL));
 
         return (static_cast<uint64_t> (low_part) << 32) | high_part;
     } else {
-        return value;
+        return value_;
     }
 }
 #endif
 
-template <size_t N> void send_command (int s, char (&command)[N])
+template <size_t N> void send_command (fd_t s_, char (&command_)[N])
 {
-  if (N < 256) {
-    send(s, "\x04");
-    char len = (char)N;
-    send_all(s, &len, 1);
-  } else {
-    send(s, "\x06");
-    uint64_t len = htonll (N);
-    send_all (s, (char*)&len, 8);
-  }
-  send_all (s, command, N);
+    if (N < 256) {
+        send (s_, "\x04");
+        char len = (char) N;
+        send_all (s_, &len, 1);
+    } else {
+        send (s_, "\x06");
+        uint64_t len = htonll (N);
+        send_all (s_, (char *) &len, 8);
+    }
+    send_all (s_, command_, N);
 }
 
-void test_curve_security_invalid_hello_command_name (char *my_endpoint,
-                                                     void *server,
-                                                     void *server_mon,
-                                                     int timeout)
+void test_curve_security_invalid_hello_command_name ()
 {
-    LIBZMQ_UNUSED (server);
-    LIBZMQ_UNUSED (timeout);
-
-    int s = connect_vanilla_socket (my_endpoint);
+    fd_t s = connect_vanilla_socket (my_endpoint);
 
     send_greeting (s);
 
@@ -374,10 +386,10 @@ void test_curve_security_invalid_hello_command_name (char *my_endpoint,
     // send CURVE HELLO with a misspelled command name (but otherwise correct)
     char hello[hello_length];
     int rc = tools.produce_hello (hello, 0);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
     hello[5] = 'X';
 
-    send_command(s, hello);
+    send_command (s, hello);
 
 #ifdef ZMQ_BUILD_DRAFT_API
     expect_monitor_event_multiple (server_mon,
@@ -388,15 +400,9 @@ void test_curve_security_invalid_hello_command_name (char *my_endpoint,
     close (s);
 }
 
-void test_curve_security_invalid_hello_version (char *my_endpoint,
-                                                void *server,
-                                                void *server_mon,
-                                                int timeout)
+void test_curve_security_invalid_hello_version ()
 {
-    LIBZMQ_UNUSED (server);
-    LIBZMQ_UNUSED (timeout);
-
-    int s = connect_vanilla_socket (my_endpoint);
+    fd_t s = connect_vanilla_socket (my_endpoint);
 
     send_greeting (s);
 
@@ -405,7 +411,7 @@ void test_curve_security_invalid_hello_version (char *my_endpoint,
     // send CURVE HELLO with a wrong version number (but otherwise correct)
     char hello[hello_length];
     int rc = tools.produce_hello (hello, 0);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
     hello[6] = 2;
 
     send_command (s, hello);
@@ -419,75 +425,69 @@ void test_curve_security_invalid_hello_version (char *my_endpoint,
     close (s);
 }
 
-void flush_read(int fd)
+void flush_read (fd_t fd_)
 {
     int res;
     char buf[256];
 
-    while ((res = recv (fd, buf, 256, 0)) == 256) {
+    while ((res = recv (fd_, buf, 256, 0)) == 256) {
     }
-    assert (res != -1);
+    TEST_ASSERT_NOT_EQUAL (-1, res);
 }
 
-void recv_all(int fd, uint8_t *data, size_t len)
+void recv_all (fd_t fd_, uint8_t *data_, socket_size_t len_)
 {
-  size_t received = 0;
-  while (received < len)
-  {
-    int res = recv(fd, (char*)data, len, 0);
-    assert(res > 0);
+    socket_size_t received = 0;
+    while (received < len_) {
+        int res = recv (fd_, (char *) data_, len_, 0);
+        TEST_ASSERT_GREATER_THAN_INT (0, res);
 
-    data += res;
-    received += res;
-  }
+        data_ += res;
+        received += res;
+    }
 }
 
-void recv_greeting (int fd)
+void recv_greeting (fd_t fd_)
 {
     uint8_t greeting[64];
-    recv_all (fd, greeting, 64);
+    recv_all (fd_, greeting, 64);
     //  TODO assert anything about the greeting received from the server?
 }
 
-int connect_exchange_greeting_and_send_hello (char *my_endpoint,
-                                              zmq::curve_client_tools_t &tools)
+fd_t connect_exchange_greeting_and_send_hello (
+  char *my_endpoint_, zmq::curve_client_tools_t &tools_)
 {
-    int s = connect_vanilla_socket (my_endpoint);
+    fd_t s = connect_vanilla_socket (my_endpoint_);
 
     send_greeting (s);
     recv_greeting (s);
 
     // send valid CURVE HELLO
     char hello[hello_length];
-    int rc = tools.produce_hello (hello, 0);
-    assert (rc == 0);
+    int rc = tools_.produce_hello (hello, 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 
     send_command (s, hello);
     return s;
 }
 
-void test_curve_security_invalid_initiate_length (char *my_endpoint,
-                                                  void *server,
-                                                  void *server_mon,
-                                                  int timeout)
+void test_curve_security_invalid_initiate_wrong_length ()
 {
-    LIBZMQ_UNUSED (server);
-
     zmq::curve_client_tools_t tools = make_curve_client_tools ();
 
-    int s = connect_exchange_greeting_and_send_hello (my_endpoint, tools);
+    fd_t s = connect_exchange_greeting_and_send_hello (my_endpoint, tools);
 
     // receive but ignore WELCOME
     flush_read (s);
 
 #ifdef ZMQ_BUILD_DRAFT_API
     int res = get_monitor_event_with_timeout (server_mon, NULL, NULL, timeout);
-    assert (res == -1);
+    TEST_ASSERT_EQUAL_INT (-1, res);
 #else
     LIBZMQ_UNUSED (timeout);
 #endif
 
-    send(s, "\x04\x09\x08INITIATE");
+    send (s, "\x04\x09\x08INITIATE");
 
 #ifdef ZMQ_BUILD_DRAFT_API
     expect_monitor_event_multiple (
@@ -498,43 +498,37 @@ void test_curve_security_invalid_initiate_length (char *my_endpoint,
     close (s);
 }
 
-int connect_exchange_greeting_and_hello_welcome (
-  char *my_endpoint,
-  void *server_mon,
-  int timeout,
-  zmq::curve_client_tools_t &tools)
+fd_t connect_exchange_greeting_and_hello_welcome (
+  char *my_endpoint_,
+  void *server_mon_,
+  int timeout_,
+  zmq::curve_client_tools_t &tools_)
 {
-    int s = connect_exchange_greeting_and_send_hello (
-      my_endpoint, tools);
+    fd_t s = connect_exchange_greeting_and_send_hello (my_endpoint_, tools_);
 
     // receive but ignore WELCOME
     uint8_t welcome[welcome_length + 2];
     recv_all (s, welcome, welcome_length + 2);
-    
-    uint8_t cn_precom [crypto_box_BEFORENMBYTES];
-    int res = tools.process_welcome (welcome + 2, welcome_length, cn_precom);
-    assert (res == 0);
+
+    uint8_t cn_precom[crypto_box_BEFORENMBYTES];
+    int res = tools_.process_welcome (welcome + 2, welcome_length, cn_precom);
+    TEST_ASSERT_ZMQ_ERRNO (res == 0);
 
 #ifdef ZMQ_BUILD_DRAFT_API
-    res = get_monitor_event_with_timeout (server_mon, NULL, NULL, timeout);
-    assert (res == -1);
+    res = get_monitor_event_with_timeout (server_mon_, NULL, NULL, timeout_);
+    TEST_ASSERT_EQUAL_INT (-1, res);
 #endif
 
     return s;
 }
 
-void test_curve_security_invalid_initiate_command_name (char *my_endpoint,
-                                                        void *server,
-                                                        void *server_mon,
-                                                        int timeout)
+void test_curve_security_invalid_initiate_command_name ()
 {
-    LIBZMQ_UNUSED (server);
-
     zmq::curve_client_tools_t tools = make_curve_client_tools ();
-    int s = connect_exchange_greeting_and_hello_welcome (
+    fd_t s = connect_exchange_greeting_and_hello_welcome (
       my_endpoint, server_mon, timeout, tools);
 
-    char initiate [257];
+    char initiate[257];
     tools.produce_initiate (initiate, 257, 1, NULL, 0);
     // modify command name
     initiate[5] = 'X';
@@ -550,16 +544,13 @@ void test_curve_security_invalid_initiate_command_name (char *my_endpoint,
     close (s);
 }
 
-void test_curve_security_invalid_initiate_command_encrypted_cookie (
-  char *my_endpoint, void *server, void *server_mon, int timeout)
+void test_curve_security_invalid_initiate_command_encrypted_cookie ()
 {
-    LIBZMQ_UNUSED (server);
-
     zmq::curve_client_tools_t tools = make_curve_client_tools ();
-    int s = connect_exchange_greeting_and_hello_welcome (
+    fd_t s = connect_exchange_greeting_and_hello_welcome (
       my_endpoint, server_mon, timeout, tools);
 
-    char initiate [257];
+    char initiate[257];
     tools.produce_initiate (initiate, 257, 1, NULL, 0);
     // make garbage from encrypted cookie
     initiate[30] = !initiate[30];
@@ -575,16 +566,13 @@ void test_curve_security_invalid_initiate_command_encrypted_cookie (
     close (s);
 }
 
-void test_curve_security_invalid_initiate_command_encrypted_content (
-  char *my_endpoint, void *server, void *server_mon, int timeout)
+void test_curve_security_invalid_initiate_command_encrypted_content ()
 {
-    LIBZMQ_UNUSED (server);
-
     zmq::curve_client_tools_t tools = make_curve_client_tools ();
-    int s = connect_exchange_greeting_and_hello_welcome (
+    fd_t s = connect_exchange_greeting_and_hello_welcome (
       my_endpoint, server_mon, timeout, tools);
 
-    char initiate [257];
+    char initiate[257];
     tools.produce_initiate (initiate, 257, 1, NULL, 0);
     // make garbage from encrypted content
     initiate[150] = !initiate[150];
@@ -600,13 +588,14 @@ void test_curve_security_invalid_initiate_command_encrypted_content (
     close (s);
 }
 
-void test_curve_security_invalid_keysize (void *ctx)
+void test_curve_security_invalid_keysize (void *ctx_)
 {
     //  Check return codes for invalid buffer sizes
-    void *client = zmq_socket (ctx, ZMQ_DEALER);
-    assert (client);
+    void *client = zmq_socket (ctx_, ZMQ_DEALER);
+    TEST_ASSERT_NOT_NULL (client);
     errno = 0;
-    int rc = zmq_setsockopt (client, ZMQ_CURVE_SERVERKEY, valid_server_public, 123);
+    int rc =
+      zmq_setsockopt (client, ZMQ_CURVE_SERVERKEY, valid_server_public, 123);
     assert (rc == -1 && errno == EINVAL);
     errno = 0;
     rc = zmq_setsockopt (client, ZMQ_CURVE_PUBLICKEY, valid_client_public, 123);
@@ -615,8 +604,36 @@ void test_curve_security_invalid_keysize (void *ctx)
     rc = zmq_setsockopt (client, ZMQ_CURVE_SECRETKEY, valid_client_secret, 123);
     assert (rc == -1 && errno == EINVAL);
     rc = zmq_close (client);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 }
+
+// TODO why isn't this const?
+char null_key[] = "0000000000000000000000000000000000000000";
+
+void test_null_server_key ()
+{
+    //  Check CURVE security with a null server key
+    //  This will be caught by the curve_server class, not passed to ZAP
+    test_null_key (ctx, server, server_mon, my_endpoint, null_key,
+                   valid_client_public, valid_client_secret);
+}
+
+void test_null_client_public_key ()
+{
+    //  Check CURVE security with a null client public key
+    //  This will be caught by the curve_server class, not passed to ZAP
+    test_null_key (ctx, server, server_mon, my_endpoint, valid_server_public,
+                   null_key, valid_client_secret);
+}
+
+void test_null_client_secret_key ()
+{
+    //  Check CURVE security with a null client public key
+    //  This will be caught by the curve_server class, not passed to ZAP
+    test_null_key (ctx, server, server_mon, my_endpoint, valid_server_public,
+                   valid_client_public, null_key);
+}
+
 
 int main (void)
 {
@@ -629,146 +646,29 @@ int main (void)
 
     setup_testutil_security_curve ();
 
-    int timeout = 250;
 
     setup_test_environment ();
 
-    void *ctx;
-    void *handler;
-    void *zap_thread;
-    void *server;
-    void *server_mon;
-    char my_endpoint [MAX_SOCKET_STRING];
-
-    fprintf (stderr, "test_curve_security_with_valid_credentials\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_with_valid_credentials (ctx, my_endpoint, server,
-                                                server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    char null_key[] = "0000000000000000000000000000000000000000";
-
-    //  Check CURVE security with a null server key
-    //  This will be caught by the curve_server class, not passed to ZAP
-    fprintf (stderr, "test_null_key (server)\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_null_key (ctx, server, server_mon, my_endpoint, null_key,
-                   valid_client_public, valid_client_secret);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    //  Check CURVE security with a null client public key
-    //  This will be caught by the curve_server class, not passed to ZAP
-    fprintf (stderr, "test_null_key (client public)\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_null_key (ctx, server, server_mon, my_endpoint, valid_server_public,
-                   null_key, valid_client_secret);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    //  Check CURVE security with a null client secret key
-    //  This will be caught by the curve_server class, not passed to ZAP
-    fprintf (stderr, "test_null_key (client secret)\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_null_key (ctx, server, server_mon, my_endpoint, valid_server_public,
-                   valid_client_public, null_key);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr, "test_curve_security_with_bogus_client_credentials\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_with_bogus_client_credentials (ctx, my_endpoint, server,
-                                                       server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr, "test_curve_security_with_null_client_credentials\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_with_null_client_credentials (ctx, my_endpoint, server,
-                                                      server_mon);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr, "test_curve_security_with_plain_client_credentials\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_with_plain_client_credentials (ctx, my_endpoint, server,
-                                                       server_mon);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-    fprintf (stderr, "test_curve_security_unauthenticated_message\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_unauthenticated_message (my_endpoint, server, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
+    UNITY_BEGIN ();
+    RUN_TEST (test_curve_security_with_valid_credentials);
+    RUN_TEST (test_null_server_key);
+    RUN_TEST (test_null_client_public_key);
+    RUN_TEST (test_null_client_secret_key);
+    RUN_TEST (test_curve_security_with_bogus_client_credentials);
+    RUN_TEST (test_curve_security_with_null_client_credentials);
+    RUN_TEST (test_curve_security_with_plain_client_credentials);
+    RUN_TEST (test_curve_security_unauthenticated_message);
 
     //  tests with misbehaving CURVE client
-    fprintf (stderr, "test_curve_security_invalid_hello_wrong_length\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_hello_wrong_length (my_endpoint, server,
-                                                    server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-    fprintf (stderr, "test_curve_security_invalid_hello_command_name\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_hello_command_name (my_endpoint, server,
-                                                    server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
+    RUN_TEST (test_curve_security_invalid_hello_wrong_length);
+    RUN_TEST (test_curve_security_invalid_hello_command_name);
+    RUN_TEST (test_curve_security_invalid_hello_version);
+    RUN_TEST (test_curve_security_invalid_initiate_wrong_length);
+    RUN_TEST (test_curve_security_invalid_initiate_command_name);
+    RUN_TEST (test_curve_security_invalid_initiate_command_encrypted_cookie);
+    RUN_TEST (test_curve_security_invalid_initiate_command_encrypted_content);
 
-    fprintf (stderr, "test_curve_security_invalid_hello_command_version\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_hello_version (my_endpoint, server, server_mon,
-                                               timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr, "test_curve_security_invalid_initiate_command_length\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_initiate_length (my_endpoint, server,
-                                                 server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr, "test_curve_security_invalid_initiate_command_name\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_initiate_command_name (my_endpoint, server,
-                                                       server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (stderr,
-             "test_curve_security_invalid_initiate_command_encrypted_cookie\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_initiate_command_encrypted_cookie (
-      my_endpoint, server, server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
-    fprintf (
-      stderr,
-      "test_curve_security_invalid_initiate_command_encrypted_content\n");
-    setup_context_and_server_side (&ctx, &handler, &zap_thread, &server,
-                                   &server_mon, my_endpoint);
-    test_curve_security_invalid_initiate_command_encrypted_content (
-      my_endpoint, server, server_mon, timeout);
-    shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
-                                      handler);
-
+    // TODO this requires a deviating test setup, must be moved to a separate executable/fixture
     //  test with a large routing id (resulting in large metadata)
     fprintf (stderr,
              "test_curve_security_with_valid_credentials (large routing id)\n");
@@ -776,17 +676,16 @@ int main (void)
       &ctx, &handler, &zap_thread, &server, &server_mon, my_endpoint,
       &zap_handler_large_routing_id, &socket_config_curve_server,
       &valid_server_secret, large_routing_id);
-    test_curve_security_with_valid_credentials (ctx, my_endpoint, server,
-                                                server_mon, timeout);
+    test_curve_security_with_valid_credentials ();
     shutdown_context_and_server_side (ctx, zap_thread, server, server_mon,
                                       handler);
 
     ctx = zmq_ctx_new ();
     test_curve_security_invalid_keysize (ctx);
     int rc = zmq_ctx_term (ctx);
-    assert (rc == 0);
+    TEST_ASSERT_ZMQ_ERRNO (rc == 0);
 
     zmq::random_close ();
 
-    return 0;
+    return UNITY_END ();
 }

@@ -32,9 +32,9 @@
 const char *bind_address = 0;
 char connect_address[MAX_SOCKET_STRING];
 
-void test_fair_queue_in (void *ctx)
+void test_fair_queue_in (void *ctx_)
 {
-    void *receiver = zmq_socket (ctx, ZMQ_ROUTER);
+    void *receiver = zmq_socket (ctx_, ZMQ_ROUTER);
     assert (receiver);
 
     int timeout = 250;
@@ -47,22 +47,23 @@ void test_fair_queue_in (void *ctx)
     rc = zmq_getsockopt (receiver, ZMQ_LAST_ENDPOINT, connect_address, &len);
     assert (rc == 0);
 
-    const size_t services = 5;
-    void *senders [services];
-    for (size_t peer = 0; peer < services; ++peer) {
-        senders [peer] = zmq_socket (ctx, ZMQ_DEALER);
-        assert (senders [peer]);
+    const unsigned char services = 5;
+    void *senders[services];
+    for (unsigned char peer = 0; peer < services; ++peer) {
+        senders[peer] = zmq_socket (ctx_, ZMQ_DEALER);
+        assert (senders[peer]);
 
-        rc = zmq_setsockopt (senders [peer], ZMQ_RCVTIMEO, &timeout, sizeof (int));
+        rc =
+          zmq_setsockopt (senders[peer], ZMQ_RCVTIMEO, &timeout, sizeof (int));
         assert (rc == 0);
 
-        char *str = strdup("A");
-        str [0] += peer;
-        rc = zmq_setsockopt (senders [peer], ZMQ_ROUTING_ID, str, 2);
+        char *str = strdup ("A");
+        str[0] += peer;
+        rc = zmq_setsockopt (senders[peer], ZMQ_ROUTING_ID, str, 2);
         assert (rc == 0);
         free (str);
 
-        rc = zmq_connect (senders [peer], connect_address);
+        rc = zmq_connect (senders[peer], connect_address);
         assert (rc == 0);
     }
 
@@ -72,28 +73,28 @@ void test_fair_queue_in (void *ctx)
     rc = zmq_msg_init (&msg);
     assert (rc == 0);
 
-    s_send_seq (senders [0], "M", SEQ_END);
+    s_send_seq (senders[0], "M", SEQ_END);
     s_recv_seq (receiver, "A", "M", SEQ_END);
 
-    s_send_seq (senders [0], "M", SEQ_END);
+    s_send_seq (senders[0], "M", SEQ_END);
     s_recv_seq (receiver, "A", "M", SEQ_END);
 
     int sum = 0;
 
     // send N requests
-    for (size_t peer = 0; peer < services; ++peer) {
-        s_send_seq (senders [peer], "M", SEQ_END);
+    for (unsigned char peer = 0; peer < services; ++peer) {
+        s_send_seq (senders[peer], "M", SEQ_END);
         sum += 'A' + peer;
     }
 
     assert (sum == services * 'A' + services * (services - 1) / 2);
 
     // handle N requests
-    for (size_t peer = 0; peer < services; ++peer) {
+    for (unsigned char peer = 0; peer < services; ++peer) {
         rc = zmq_msg_recv (&msg, receiver, 0);
         assert (rc == 2);
-        const char *id = (const char *)zmq_msg_data (&msg);
-        sum -= id [0];
+        const char *id = (const char *) zmq_msg_data (&msg);
+        sum -= id[0];
 
         s_recv_seq (receiver, "M", SEQ_END);
     }
@@ -106,48 +107,49 @@ void test_fair_queue_in (void *ctx)
     close_zero_linger (receiver);
 
     for (size_t peer = 0; peer < services; ++peer)
-        close_zero_linger (senders [peer]);
+        close_zero_linger (senders[peer]);
 
     // Wait for disconnects.
     msleep (SETTLE_TIME);
 }
 
-void test_destroy_queue_on_disconnect (void *ctx)
+void test_destroy_queue_on_disconnect (void *ctx_)
 {
-    void *A = zmq_socket (ctx, ZMQ_ROUTER);
-    assert (A);
+    void *a = zmq_socket (ctx_, ZMQ_ROUTER);
+    assert (a);
 
     int enabled = 1;
-    int rc = zmq_setsockopt (A, ZMQ_ROUTER_MANDATORY, &enabled, sizeof (enabled));
+    int rc =
+      zmq_setsockopt (a, ZMQ_ROUTER_MANDATORY, &enabled, sizeof (enabled));
     assert (rc == 0);
 
-    rc = zmq_bind (A, bind_address);
+    rc = zmq_bind (a, bind_address);
     assert (rc == 0);
     size_t len = MAX_SOCKET_STRING;
-    rc = zmq_getsockopt (A, ZMQ_LAST_ENDPOINT, connect_address, &len);
+    rc = zmq_getsockopt (a, ZMQ_LAST_ENDPOINT, connect_address, &len);
     assert (rc == 0);
 
-    void *B = zmq_socket (ctx, ZMQ_DEALER);
-    assert (B);
+    void *b = zmq_socket (ctx_, ZMQ_DEALER);
+    assert (b);
 
-    rc = zmq_setsockopt (B, ZMQ_ROUTING_ID, "B", 2);
+    rc = zmq_setsockopt (b, ZMQ_ROUTING_ID, "B", 2);
     assert (rc == 0);
 
-    rc = zmq_connect (B, connect_address);
+    rc = zmq_connect (b, connect_address);
     assert (rc == 0);
 
     // Wait for connection.
     msleep (SETTLE_TIME);
 
     // Send a message in both directions
-    s_send_seq (A, "B", "ABC", SEQ_END);
-    s_send_seq (B, "DEF", SEQ_END);
+    s_send_seq (a, "B", "ABC", SEQ_END);
+    s_send_seq (b, "DEF", SEQ_END);
 
-    rc = zmq_disconnect (B, connect_address);
+    rc = zmq_disconnect (b, connect_address);
     assert (rc == 0);
 
     // Disconnect may take time and need command processing.
-    zmq_pollitem_t poller [2] = { { A, 0, 0, 0 }, { B, 0, 0, 0 } };
+    zmq_pollitem_t poller[2] = {{a, 0, 0, 0}, {b, 0, 0, 0}};
     rc = zmq_poll (poller, 2, 100);
     assert (rc == 0);
     rc = zmq_poll (poller, 2, 100);
@@ -157,31 +159,31 @@ void test_destroy_queue_on_disconnect (void *ctx)
     zmq_msg_t msg;
     zmq_msg_init (&msg);
 
-    rc = zmq_send (A, "B", 2, ZMQ_SNDMORE | ZMQ_DONTWAIT);
+    rc = zmq_send (a, "B", 2, ZMQ_SNDMORE | ZMQ_DONTWAIT);
     assert (rc == -1);
     assert (errno == EHOSTUNREACH);
 
-    rc = zmq_msg_recv (&msg, A, ZMQ_DONTWAIT);
+    rc = zmq_msg_recv (&msg, a, ZMQ_DONTWAIT);
     assert (rc == -1);
     assert (errno == EAGAIN);
 
     // After a reconnect of B, the messages should still be gone
-    rc = zmq_connect (B, connect_address);
+    rc = zmq_connect (b, connect_address);
     assert (rc == 0);
 
-    rc = zmq_msg_recv (&msg, A, ZMQ_DONTWAIT);
+    rc = zmq_msg_recv (&msg, a, ZMQ_DONTWAIT);
     assert (rc == -1);
     assert (errno == EAGAIN);
 
-    rc = zmq_msg_recv (&msg, B, ZMQ_DONTWAIT);
+    rc = zmq_msg_recv (&msg, b, ZMQ_DONTWAIT);
     assert (rc == -1);
     assert (errno == EAGAIN);
 
     rc = zmq_msg_close (&msg);
     assert (rc == 0);
 
-    close_zero_linger (A);
-    close_zero_linger (B);
+    close_zero_linger (a);
+    close_zero_linger (b);
 
     // Wait for disconnects.
     msleep (SETTLE_TIME);
@@ -190,14 +192,14 @@ void test_destroy_queue_on_disconnect (void *ctx)
 
 int main (void)
 {
-    setup_test_environment();
+    setup_test_environment ();
     void *ctx = zmq_ctx_new ();
     assert (ctx);
 
-    const char *binds [] = { "inproc://a", "tcp://127.0.0.1:*" };
+    const char *binds[] = {"inproc://a", "tcp://127.0.0.1:*"};
 
     for (int transport = 0; transport < 2; ++transport) {
-        bind_address = binds [transport];
+        bind_address = binds[transport];
 
         // SHALL receive incoming messages from its peers using a fair-queuing
         // strategy.
@@ -213,5 +215,5 @@ int main (void)
     int rc = zmq_ctx_term (ctx);
     assert (rc == 0);
 
-    return 0 ;
+    return 0;
 }

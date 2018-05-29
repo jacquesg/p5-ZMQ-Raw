@@ -31,6 +31,11 @@
 
 int main (void)
 {
+    if (!is_tipc_available ()) {
+        printf ("TIPC environment unavailable, skipping test\n");
+        return 77;
+    }
+
     fprintf (stderr, "test_sub_forward running...\n");
 
     void *ctx = zmq_init (1);
@@ -63,7 +68,7 @@ int main (void)
     assert (rc == 0);
 
     //  Pass the subscription upstream through the device.
-    char buff [32];
+    char buff[32];
     rc = zmq_recv (xpub, buff, sizeof (buff), 0);
     assert (rc >= 0);
     rc = zmq_send (xsub, buff, rc, 0);
@@ -98,5 +103,5 @@ int main (void)
     rc = zmq_ctx_term (ctx);
     assert (rc == 0);
 
-    return 0 ;
+    return 0;
 }

@@ -65,6 +65,7 @@ set(tests
         test_stream_timeout
         test_xpub_manual
         test_xpub_welcome_msg
+        test_xpub_verbose
         test_base85
         test_bind_after_connect_tcp
         test_sodium
@@ -102,6 +103,7 @@ if(NOT WIN32)
     )
     if(ZMQ_HAVE_TIPC)
       list(APPEND tests
+            test_address_tipc
             test_pair_tipc
             test_reqrep_device_tipc
             test_reqrep_tipc
@@ -130,9 +132,9 @@ IF (ENABLE_DRAFTS)
         test_client_server
         test_timers
         test_radio_dish
-        test_udp
         test_scatter_gather
         test_dgram
+        test_app_meta
     )
 ENDIF (ENABLE_DRAFTS)
 
@@ -144,11 +146,29 @@ if(WIN32)
     link_libraries(ws2_32.lib)
 endif()
 
+add_library (unity 
+    STATIC 
+    "${CMAKE_CURRENT_LIST_DIR}/../external/unity/unity.c" 
+    "${CMAKE_CURRENT_LIST_DIR}/../external/unity/unity.h" 
+    "${CMAKE_CURRENT_LIST_DIR}/../external/unity/unity_internals.h")
+set_target_properties (unity PROPERTIES
+                             PUBLIC_HEADER "${CMAKE_CURRENT_LIST_DIR}/../external/unity/unity.h")
+target_compile_definitions (unity PUBLIC "UNITY_USE_COMMAND_LINE_ARGS" "UNITY_EXCLUDE_FLOAT")
+target_include_directories (unity PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../external/unity")
+
+IF (MSVC_VERSION LESS 1700)
+    SET_SOURCE_FILES_PROPERTIES("${CMAKE_CURRENT_LIST_DIR}/../external/unity/unity.c" PROPERTIES LANGUAGE CXX)
+ENDIF()
+
+IF (MSVC_VERSION LESS 1600)
+    target_compile_definitions (unity PUBLIC "UNITY_EXCLUDE_STDINT_H")
+ENDIF()
+
 # add library and include dirs for all targets
 if (BUILD_SHARED)
-link_libraries(libzmq ${OPTIONAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+link_libraries(libzmq ${OPTIONAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} unity)
 else ()
-link_libraries(libzmq-static ${OPTIONAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+link_libraries(libzmq-static ${OPTIONAL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} unity)
 endif ()
 include_directories("${CMAKE_SOURCE_DIR}/../include" "${CMAKE_BINARY_DIR}")
 
@@ -165,7 +185,7 @@ foreach(test ${tests})
     add_executable(${test} ${test}.cpp
         "testutil_security.hpp")
   else ()
-    add_executable(${test} ${test}.cpp)
+    add_executable(${test} ${test}.cpp "testutil.hpp" "testutil_unity.hpp")
   endif ()
   if(WIN32)
     # This is the output for Debug dynamic builds on Visual Studio 6.0
@@ -191,11 +211,21 @@ foreach(test ${tests})
     add_test(NAME ${test} COMMAND ${test})
   endif()
   set_tests_properties(${test} PROPERTIES TIMEOUT 10)
+  set_tests_properties(${test} PROPERTIES SKIP_RETURN_CODE 77)
 endforeach()
 
 #override timeout for these tests
 if(ZMQ_HAVE_CURVE)
   set_tests_properties(test_security_curve PROPERTIES TIMEOUT 60)
+endif()
+set_tests_properties(test_heartbeats PROPERTIES TIMEOUT 60)
+
+if(WIN32 AND ${POLLER} MATCHES "epoll")
+  set_tests_properties(test_many_sockets PROPERTIES TIMEOUT 120)
+endif()
+
+if(WIN32)
+  set_tests_properties(test_radio_dish PROPERTIES TIMEOUT 30)
 endif()
 
 #add additional required flags
