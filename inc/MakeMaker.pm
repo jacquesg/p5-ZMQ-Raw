@@ -243,15 +243,20 @@ sub MY::c_o {
 		$out_switch = '/Fo';
 	}
 
+	my $std_switch = '';
+	if ($is_gcc) {
+		$std_switch = '-std=c++11'
+	}
+
 	my $line = qq{
 .c\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.c $out_switch\$@
 
 .cc\$(OBJ_EXT):
-	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cc $out_switch\$@
+	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cc $std_switch $out_switch\$@
 
 .cpp\$(OBJ_EXT):
-	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $out_switch\$@
+	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $std_switch $out_switch\$@
 };
 	return $line;
 }
