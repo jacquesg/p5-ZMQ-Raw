@@ -31,6 +31,11 @@
 
 int main (void)
 {
+    if (!is_tipc_available ()) {
+        printf ("TIPC environment unavailable, skipping test\n");
+        return 77;
+    }
+
     fprintf (stderr, "test_reqrep_device_tipc running...\n");
 
     void *ctx = zmq_init (1);
@@ -80,7 +85,7 @@ int main (void)
     }
 
     //  Receive the request.
-    char buff [3];
+    char buff[3];
     rc = zmq_recv (rep, buff, 3, 0);
     assert (rc == 3);
     assert (memcmp (buff, "ABC", 3) == 0);
@@ -142,5 +147,5 @@ int main (void)
     rc = zmq_ctx_term (ctx);
     assert (rc == 0);
 
-    return 0 ;
+    return 0;
 }

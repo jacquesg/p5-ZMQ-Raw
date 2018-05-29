@@ -30,7 +30,8 @@
 #include "testutil.hpp"
 
 
-void test_stream_2_stream(){
+void test_stream_2_stream ()
+{
     void *rbind, *rconn1;
     int ret;
     char buff[256];
@@ -45,12 +46,13 @@ void test_stream_2_stream(){
     //  Set up listener STREAM.
     rbind = zmq_socket (ctx, ZMQ_STREAM);
     assert (rbind);
-    ret = zmq_setsockopt (rbind, ZMQ_STREAM_NOTIFY, &disabled, sizeof (disabled));
+    ret =
+      zmq_setsockopt (rbind, ZMQ_STREAM_NOTIFY, &disabled, sizeof (disabled));
     assert (ret == 0);
     ret = zmq_setsockopt (rbind, ZMQ_LINGER, &zero, sizeof (zero));
     assert (0 == ret);
     ret = zmq_bind (rbind, bindip);
-    assert(0 == ret);
+    assert (0 == ret);
     ret = zmq_getsockopt (rbind, ZMQ_LAST_ENDPOINT, my_endpoint, &len);
     assert (0 == ret);
 
@@ -65,7 +67,7 @@ void test_stream_2_stream(){
     assert (0 == ret);
     ret = zmq_connect (rconn1, my_endpoint);
 
-/*  Uncomment to test assert on duplicate routing id.
+    /*  Uncomment to test assert on duplicate routing id.
     //  Test duplicate connect attempt.
     ret = zmq_setsockopt (rconn1, ZMQ_CONNECT_ROUTING_ID, "conn1", 6);
     assert (0 == ret);
@@ -82,22 +84,23 @@ void test_stream_2_stream(){
     ret = zmq_recv (rbind, buff, 256, 0);
     assert (ret);
     assert (0 == buff[0]);
-    ret = zmq_recv (rbind, buff+128, 128, 0);
+    ret = zmq_recv (rbind, buff + 128, 128, 0);
     assert (5 == ret);
     assert ('h' == buff[128]);
 
     // Handle close of the socket.
     ret = zmq_unbind (rbind, my_endpoint);
-    assert(0 == ret);
+    assert (0 == ret);
     ret = zmq_close (rbind);
-    assert(0 == ret);
+    assert (0 == ret);
     ret = zmq_close (rconn1);
-    assert(0 == ret);
+    assert (0 == ret);
 
     zmq_ctx_destroy (ctx);
 }
 
-void test_router_2_router(bool named){
+void test_router_2_router (bool named_)
+{
     void *rbind, *rconn1;
     int ret;
     char buff[256];
@@ -125,7 +128,7 @@ void test_router_2_router(bool named){
     assert (0 == ret);
 
     //  If we're in named mode, set some identities.
-    if (named) {
+    if (named_) {
         ret = zmq_setsockopt (rbind, ZMQ_ROUTING_ID, "X", 1);
         ret = zmq_setsockopt (rconn1, ZMQ_ROUTING_ID, "Y", 1);
     }
@@ -135,7 +138,7 @@ void test_router_2_router(bool named){
     assert (0 == ret);
     ret = zmq_connect (rconn1, my_endpoint);
     assert (0 == ret);
-/*  Uncomment to test assert on duplicate routing id
+    /*  Uncomment to test assert on duplicate routing id
     //  Test duplicate connect attempt.
     ret = zmq_setsockopt (rconn1, ZMQ_CONNECT_ROUTING_ID, "conn1", 6);
     assert (0 == ret);
@@ -150,21 +153,20 @@ void test_router_2_router(bool named){
 
     //  Receive the name.
     ret = zmq_recv (rbind, buff, 256, 0);
-    if (named)
+    if (named_)
         assert (ret && 'Y' == buff[0]);
     else
         assert (ret && 0 == buff[0]);
 
     //  Receive the data.
-    ret = zmq_recv (rbind, buff+128, 128, 0);
-    assert(5 == ret && 'h' == buff[128]);
+    ret = zmq_recv (rbind, buff + 128, 128, 0);
+    assert (5 == ret && 'h' == buff[128]);
 
     //  Send some data back.
-    if (named) {
+    if (named_) {
         ret = zmq_send (rbind, buff, 1, ZMQ_SNDMORE);
         assert (1 == ret);
-    }
-    else {
+    } else {
         ret = zmq_send (rbind, buff, 5, ZMQ_SNDMORE);
         assert (5 == ret);
     }
@@ -174,15 +176,15 @@ void test_router_2_router(bool named){
     //  If bound socket identity naming a problem, we'll likely see something funky here.
     ret = zmq_recv (rconn1, buff, 256, 0);
     assert ('c' == buff[0] && 6 == ret);
-    ret = zmq_recv (rconn1, buff+128, 128, 0);
+    ret = zmq_recv (rconn1, buff + 128, 128, 0);
     assert (3 == ret && 'o' == buff[128]);
 
     ret = zmq_unbind (rbind, my_endpoint);
-    assert(0 == ret);
+    assert (0 == ret);
     ret = zmq_close (rbind);
-    assert(0 == ret);
+    assert (0 == ret);
     ret = zmq_close (rconn1);
-    assert(0 == ret);
+    assert (0 == ret);
 
     zmq_ctx_destroy (ctx);
 }

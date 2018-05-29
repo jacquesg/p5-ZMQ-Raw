@@ -31,7 +31,7 @@
 
 int main (void)
 {
-    setup_test_environment();
+    setup_test_environment ();
     void *ctx = zmq_ctx_new ();
     assert (ctx);
 
@@ -41,22 +41,30 @@ int main (void)
     assert (rc == 0);
 
     //  Receive on disconnected socket returns immediately
-    char buffer [32];
+    char buffer[32];
     rc = zmq_recv (frontend, buffer, 32, ZMQ_DONTWAIT);
     assert (rc == -1);
-    assert (zmq_errno() == EAGAIN);
-    
+    assert (zmq_errno () == EAGAIN);
+
     //  Check whether receive timeout is honored
-    int timeout = 250;
+    const int timeout = 250;
+    const int jitter = 50;
     rc = zmq_setsockopt (frontend, ZMQ_RCVTIMEO, &timeout, sizeof (int));
     assert (rc == 0);
 
-    void* stopwatch = zmq_stopwatch_start();
+    void *stopwatch = zmq_stopwatch_start ();
     rc = zmq_recv (frontend, buffer, 32, 0);
     assert (rc == -1);
     assert (zmq_errno () == EAGAIN);
-    unsigned int elapsed = zmq_stopwatch_stop(stopwatch) / 1000;
-    assert (elapsed > 200 && elapsed < 300);
+    unsigned int elapsed = zmq_stopwatch_stop (stopwatch) / 1000;
+    assert (elapsed > timeout - jitter);
+    if (elapsed >= timeout + jitter) {
+        // we cannot assert this on a non-RT system
+        fprintf (stderr,
+                 "zmq_recv took quite long, with a timeout of %i ms, it took "
+                 "actually %i ms\n",
+                 timeout, elapsed);
+    }
 
     //  Check that normal message flow works as expected
     void *backend = zmq_socket (ctx, ZMQ_DEALER);
@@ -74,12 +82,12 @@ int main (void)
     //  Clean-up
     rc = zmq_close (backend);
     assert (rc == 0);
-    
+
     rc = zmq_close (frontend);
     assert (rc == 0);
-    
+
     rc = zmq_ctx_term (ctx);
     assert (rc == 0);
 
-    return 0 ;
+    return 0;
 }

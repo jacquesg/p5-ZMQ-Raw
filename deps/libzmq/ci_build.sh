@@ -48,6 +48,14 @@ if [ $BUILD_TYPE == "default" ]; then
         CONFIG_OPTS+=("--with-norm=yes")
     fi
 
+    if [ -n "$TIPC" ] && [ "$TIPC" == "enabled" ]; then
+        sudo modprobe tipc
+    fi
+
+    if [ -n "$POLLER" ]; then
+        CONFIG_OPTS+=("--with-poller=${POLLER}")
+    fi
+
     if [ -z $DRAFT ] || [ $DRAFT == "disabled" ]; then
         CONFIG_OPTS+=("--enable-drafts=no")
     elif [ $DRAFT == "enabled" ]; then

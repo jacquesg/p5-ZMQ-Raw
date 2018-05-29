@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I config
 
 SUBDIRS = doc
 
-DIST_SUBDIRS = doc builds builds/msvc
+DIST_SUBDIRS = doc builds builds/deprecated-msvc
 
 pkgconfig_DATA = src/libzmq.pc
 
@@ -64,6 +64,8 @@ src_libzmq_la_SOURCES = \
 	src/fq.hpp \
 	src/gather.cpp \
 	src/gather.hpp \
+	src/generic_mtrie.hpp \
+	src/generic_mtrie_impl.hpp \
 	src/gssapi_mechanism_base.cpp \
 	src/gssapi_mechanism_base.hpp \
 	src/gssapi_client.cpp \
@@ -81,6 +83,8 @@ src_libzmq_la_SOURCES = \
 	src/io_thread.hpp \
 	src/ip.cpp \
 	src/ip.hpp \
+	src/ip_resolver.cpp \
+	src/ip_resolver.hpp \
 	src/ipc_address.cpp \
 	src/ipc_address.hpp \
 	src/ipc_connecter.cpp \
@@ -130,6 +134,7 @@ src_libzmq_la_SOURCES = \
 	src/pipe.hpp \
 	src/plain_client.cpp \
 	src/plain_client.hpp \
+	src/plain_common.hpp \
 	src/plain_server.cpp \
 	src/plain_server.hpp \
 	src/platform.hpp \
@@ -415,6 +420,7 @@ test_apps = \
 	tests/test_xpub_nodrop \
 	tests/test_xpub_manual \
 	tests/test_xpub_welcome_msg \
+	tests/test_xpub_verbose \
 	tests/test_atomics \
 	tests/test_sockopt_hwm \
 	tests/test_heartbeats \
@@ -425,6 +431,13 @@ test_apps = \
 	tests/test_sodium \
 	tests/test_reconnect_ivl \
 	tests/test_socket_null
+
+UNITY_CPPFLAGS = -I$(top_srcdir)/external/unity -DUNITY_USE_COMMAND_LINE_ARGS -DUNITY_EXCLUDE_FLOAT
+UNITY_LIBS = $(top_builddir)/external/unity/libunity.a
+noinst_LIBRARIES = external/unity/libunity.a
+external_unity_libunity_a_SOURCES = external/unity/unity.c \
+	external/unity/unity.h \
+	external/unity/unity_internals.h
 
 tests_test_ancillaries_SOURCES = tests/test_ancillaries.cpp
 tests_test_ancillaries_LDADD = src/libzmq.la
@@ -450,13 +463,16 @@ tests_test_reqrep_inproc_LDADD = src/libzmq.la
 tests_test_reqrep_tcp_SOURCES = \
 	tests/test_reqrep_tcp.cpp \
 	tests/testutil.hpp
-tests_test_reqrep_tcp_LDADD = src/libzmq.la
+tests_test_reqrep_tcp_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_reqrep_tcp_CPPFLAGS = ${UNITY_CPPFLAGS}
 
-tests_test_hwm_SOURCES = tests/test_hwm.cpp
-tests_test_hwm_LDADD = src/libzmq.la
+tests_test_hwm_SOURCES = tests/test_hwm.cpp tests/testutil_unity.hpp
+tests_test_hwm_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_hwm_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_hwm_pubsub_SOURCES = tests/test_hwm_pubsub.cpp
-tests_test_hwm_pubsub_LDADD = src/libzmq.la
+tests_test_hwm_pubsub_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_hwm_pubsub_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_reqrep_device_SOURCES = tests/test_reqrep_device.cpp
 tests_test_reqrep_device_LDADD = src/libzmq.la
@@ -474,13 +490,16 @@ tests_test_msg_ffn_SOURCES = tests/test_msg_ffn.cpp
 tests_test_msg_ffn_LDADD = src/libzmq.la
 
 tests_test_connect_resolve_SOURCES = tests/test_connect_resolve.cpp
-tests_test_connect_resolve_LDADD = src/libzmq.la
+tests_test_connect_resolve_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_connect_resolve_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_immediate_SOURCES = tests/test_immediate.cpp
-tests_test_immediate_LDADD = src/libzmq.la
+tests_test_immediate_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_immediate_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_last_endpoint_SOURCES = tests/test_last_endpoint.cpp
-tests_test_last_endpoint_LDADD = src/libzmq.la
+tests_test_last_endpoint_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_last_endpoint_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_term_endpoint_SOURCES = tests/test_term_endpoint.cpp
 tests_test_term_endpoint_LDADD = src/libzmq.la
@@ -491,14 +510,16 @@ tests_test_srcfd_LDADD = src/libzmq.la
 tests_test_monitor_SOURCES = tests/test_monitor.cpp
 tests_test_monitor_LDADD = src/libzmq.la
 
-tests_test_router_mandatory_SOURCES = tests/test_router_mandatory.cpp
-tests_test_router_mandatory_LDADD = src/libzmq.la
+tests_test_router_mandatory_SOURCES = tests/test_router_mandatory.cpp tests/testutil_unity.hpp
+tests_test_router_mandatory_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_router_mandatory_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_router_mandatory_hwm_SOURCES = tests/test_router_mandatory_hwm.cpp
 tests_test_router_mandatory_hwm_LDADD = src/libzmq.la
 
 tests_test_router_handover_SOURCES = tests/test_router_handover.cpp
-tests_test_router_handover_LDADD = src/libzmq.la
+tests_test_router_handover_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_router_handover_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_probe_router_SOURCES = tests/test_probe_router.cpp
 tests_test_probe_router_LDADD = src/libzmq.la
@@ -531,7 +552,8 @@ tests_test_iov_SOURCES = tests/test_iov.cpp
 tests_test_iov_LDADD = src/libzmq.la
 
 tests_test_ctx_destroy_SOURCES = tests/test_ctx_destroy.cpp
-tests_test_ctx_destroy_LDADD = src/libzmq.la
+tests_test_ctx_destroy_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_ctx_destroy_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_security_null_SOURCES = tests/test_security_null.cpp
 tests_test_security_null_LDADD = src/libzmq.la
@@ -552,7 +574,8 @@ tests_test_spec_rep_SOURCES = tests/test_spec_rep.cpp
 tests_test_spec_rep_LDADD = src/libzmq.la
 
 tests_test_spec_dealer_SOURCES = tests/test_spec_dealer.cpp
-tests_test_spec_dealer_LDADD = src/libzmq.la
+tests_test_spec_dealer_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_spec_dealer_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_spec_router_SOURCES = tests/test_spec_router.cpp
 tests_test_spec_router_LDADD = src/libzmq.la
@@ -567,10 +590,12 @@ tests_test_req_relaxed_SOURCES = tests/test_req_relaxed.cpp
 tests_test_req_relaxed_LDADD = src/libzmq.la
 
 tests_test_conflate_SOURCES = tests/test_conflate.cpp
-tests_test_conflate_LDADD = src/libzmq.la
+tests_test_conflate_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_conflate_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_inproc_connect_SOURCES = tests/test_inproc_connect.cpp
-tests_test_inproc_connect_LDADD = src/libzmq.la
+tests_test_inproc_connect_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_inproc_connect_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_issue_566_SOURCES = tests/test_issue_566.cpp
 tests_test_issue_566_LDADD = src/libzmq.la
@@ -597,7 +622,8 @@ tests_test_connect_rid_SOURCES = tests/test_connect_rid.cpp
 tests_test_connect_rid_LDADD = src/libzmq.la
 
 tests_test_bind_src_address_SOURCES = tests/test_bind_src_address.cpp
-tests_test_bind_src_address_LDADD = src/libzmq.la
+tests_test_bind_src_address_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_bind_src_address_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_metadata_SOURCES = tests/test_metadata.cpp
 tests_test_metadata_LDADD = src/libzmq.la
@@ -606,7 +632,8 @@ tests_test_capabilities_SOURCES = tests/test_capabilities.cpp
 tests_test_capabilities_LDADD = src/libzmq.la
 
 tests_test_xpub_nodrop_SOURCES = tests/test_xpub_nodrop.cpp
-tests_test_xpub_nodrop_LDADD = src/libzmq.la
+tests_test_xpub_nodrop_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_xpub_nodrop_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_xpub_manual_SOURCES = tests/test_xpub_manual.cpp
 tests_test_xpub_manual_LDADD = src/libzmq.la
@@ -614,26 +641,34 @@ tests_test_xpub_manual_LDADD = src/libzmq.la
 tests_test_xpub_welcome_msg_SOURCES = tests/test_xpub_welcome_msg.cpp
 tests_test_xpub_welcome_msg_LDADD = src/libzmq.la
 
+tests_test_xpub_verbose_SOURCES = tests/test_xpub_verbose.cpp
+tests_test_xpub_verbose_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_xpub_verbose_CPPFLAGS = ${UNITY_CPPFLAGS}
+
 tests_test_atomics_SOURCES = tests/test_atomics.cpp
 tests_test_atomics_LDADD = src/libzmq.la
 
 tests_test_sockopt_hwm_SOURCES = tests/test_sockopt_hwm.cpp
-tests_test_sockopt_hwm_LDADD = src/libzmq.la
+tests_test_sockopt_hwm_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_sockopt_hwm_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_setsockopt_SOURCES = tests/test_setsockopt.cpp
 tests_test_setsockopt_LDADD = src/libzmq.la
 
 tests_test_heartbeats_SOURCES = tests/test_heartbeats.cpp
-tests_test_heartbeats_LDADD = src/libzmq.la
+tests_test_heartbeats_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_heartbeats_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_stream_exceeds_buffer_SOURCES = tests/test_stream_exceeds_buffer.cpp
 tests_test_stream_exceeds_buffer_LDADD = src/libzmq.la
 
 tests_test_pub_invert_matching_SOURCES = tests/test_pub_invert_matching.cpp
-tests_test_pub_invert_matching_LDADD = src/libzmq.la
+tests_test_pub_invert_matching_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_pub_invert_matching_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_bind_after_connect_tcp_SOURCES = tests/test_bind_after_connect_tcp.cpp
-tests_test_bind_after_connect_tcp_LDADD = src/libzmq.la
+tests_test_bind_after_connect_tcp_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_bind_after_connect_tcp_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_base85_SOURCES = tests/test_base85.cpp
 tests_test_base85_LDADD = src/libzmq.la
@@ -642,10 +677,12 @@ tests_test_sodium_SOURCES = tests/test_sodium.cpp
 tests_test_sodium_LDADD = src/libzmq.la
 
 tests_test_socket_null_SOURCES = tests/test_socket_null.cpp
-tests_test_socket_null_LDADD = src/libzmq.la
+tests_test_socket_null_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_socket_null_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_reconnect_ivl_SOURCES = tests/test_reconnect_ivl.cpp
-tests_test_reconnect_ivl_LDADD = src/libzmq.la
+tests_test_reconnect_ivl_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_reconnect_ivl_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 if HAVE_CURVE
 
@@ -670,8 +707,9 @@ tests_test_security_curve_SOURCES += \
 endif
 
 tests_test_security_curve_LDADD = \
-	src/libzmq.la $(LIBUNWIND_LIBS)
+	src/libzmq.la ${UNITY_LIBS} $(LIBUNWIND_LIBS)
 tests_test_security_curve_CPPFLAGS = \
+	${UNITY_CPPFLAGS} \
 	${LIBUNWIND_CFLAGS}
 
 if USE_LIBSODIUM
@@ -756,7 +794,8 @@ test_apps += \
 	tests/test_router_mandatory_tipc \
 	tests/test_shutdown_stress_tipc \
 	tests/test_sub_forward_tipc \
-	tests/test_term_endpoint_tipc
+	tests/test_term_endpoint_tipc \
+	tests/test_address_tipc
 
 tests_test_connect_delay_tipc_SOURCES = tests/test_connect_delay_tipc.cpp
 tests_test_connect_delay_tipc_LDADD = src/libzmq.la
@@ -781,6 +820,10 @@ tests_test_sub_forward_tipc_LDADD = src/libzmq.la
 
 tests_test_term_endpoint_tipc_SOURCES = tests/test_term_endpoint_tipc.cpp
 tests_test_term_endpoint_tipc_LDADD = src/libzmq.la
+
+tests_test_address_tipc_SOURCES = tests/test_address_tipc.cpp
+tests_test_address_tipc_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_address_tipc_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 endif
 
@@ -822,33 +865,88 @@ test_apps += tests/test_poller \
 	tests/test_thread_safe \
 	tests/test_timers \
 	tests/test_radio_dish \
-	tests/test_udp \
 	tests/test_scatter_gather \
-	tests/test_dgram
+	tests/test_dgram \
+	tests/test_app_meta
 
 tests_test_poller_SOURCES = tests/test_poller.cpp
-tests_test_poller_LDADD = src/libzmq.la
+tests_test_poller_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_poller_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_client_server_SOURCES = tests/test_client_server.cpp
-tests_test_client_server_LDADD = src/libzmq.la
+tests_test_client_server_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_client_server_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_thread_safe_SOURCES = tests/test_thread_safe.cpp
-tests_test_thread_safe_LDADD = src/libzmq.la
+tests_test_thread_safe_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_thread_safe_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_timers_SOURCES = tests/test_timers.cpp
 tests_test_timers_LDADD = src/libzmq.la
 
 tests_test_radio_dish_SOURCES = tests/test_radio_dish.cpp
-tests_test_radio_dish_LDADD = src/libzmq.la
-
-tests_test_udp_SOURCES = tests/test_udp.cpp
-tests_test_udp_LDADD = src/libzmq.la
+tests_test_radio_dish_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_radio_dish_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_scatter_gather_SOURCES = tests/test_scatter_gather.cpp
 tests_test_scatter_gather_LDADD = src/libzmq.la
 
 tests_test_dgram_SOURCES = tests/test_dgram.cpp
 tests_test_dgram_LDADD = src/libzmq.la
+
+tests_test_app_meta_SOURCES = tests/test_app_meta.cpp
+tests_test_app_meta_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_app_meta_CPPFLAGS = ${UNITY_CPPFLAGS}
+endif
+
+if ENABLE_STATIC
+# unit tests - these include individual source files and test the internal functions
+test_apps += \
+	unittests/unittest_poller \
+	unittests/unittest_ypipe \
+	unittests/unittest_mtrie \
+	unittests/unittest_ip_resolver \
+	unittests/unittest_udp_address
+
+unittests_unittest_poller_SOURCES = unittests/unittest_poller.cpp
+unittests_unittest_poller_CPPFLAGS = -I$(top_srcdir)/src ${UNITY_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_poller_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_poller_LDADD = $(top_builddir)/src/.libs/libzmq.a \
+	${src_libzmq_la_LIBADD} \
+	${UNITY_LIBS} \
+	$(CODE_COVERAGE_LDFLAGS)
+
+unittests_unittest_ypipe_SOURCES = unittests/unittest_ypipe.cpp
+unittests_unittest_ypipe_CPPFLAGS = -I$(top_srcdir)/src ${UNITY_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_ypipe_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_ypipe_LDADD = $(top_builddir)/src/.libs/libzmq.a \
+	${src_libzmq_la_LIBADD} \
+	${UNITY_LIBS} \
+	$(CODE_COVERAGE_LDFLAGS)
+
+unittests_unittest_mtrie_SOURCES = unittests/unittest_mtrie.cpp
+unittests_unittest_mtrie_CPPFLAGS = -I$(top_srcdir)/src ${UNITY_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_mtrie_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_mtrie_LDADD = $(top_builddir)/src/.libs/libzmq.a \
+	${src_libzmq_la_LIBADD} \
+	${UNITY_LIBS} \
+	$(CODE_COVERAGE_LDFLAGS)
+
+unittests_unittest_ip_resolver_SOURCES = unittests/unittest_ip_resolver.cpp unittests/unittest_resolver_common.hpp
+unittests_unittest_ip_resolver_CPPFLAGS = -I$(top_srcdir)/src ${UNITY_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_ip_resolver_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_ip_resolver_LDADD = $(top_builddir)/src/.libs/libzmq.a \
+	${src_libzmq_la_LIBADD} \
+	${UNITY_LIBS} \
+	$(CODE_COVERAGE_LDFLAGS)
+
+unittests_unittest_udp_address_SOURCES = unittests/unittest_udp_address.cpp unittests/unittest_resolver_common.hpp
+unittests_unittest_udp_address_CPPFLAGS = -I$(top_srcdir)/src ${UNITY_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_udp_address_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_udp_address_LDADD = $(top_builddir)/src/.libs/libzmq.a \
+	${src_libzmq_la_LIBADD} \
+	${UNITY_LIBS} \
+	$(CODE_COVERAGE_LDFLAGS)
 endif
 
 check_PROGRAMS = ${test_apps}
@@ -867,15 +965,17 @@ XFAIL_TESTS += test_ipc_wildcard \
 endif
 
 EXTRA_DIST = \
-	FindSodium.cmake \
+	external/unity/license.txt \
+	external/unity/version.txt \
 	CMakeLists.txt \
-	ZeroMQConfig.cmake.in \
 	autogen.sh	\
 	version.sh	\
 	src/libzmq.pc.cmake.in \
+	ci_build.sh \
 	src/libzmq.vers \
 	src/version.rc.in \
 	tests/CMakeLists.txt \
+	unittests/CMakeLists.txt \
 	tools/curve_keygen.cpp
 
 MAINTAINERCLEANFILES = \
@@ -883,6 +983,57 @@ MAINTAINERCLEANFILES = \
 	$(srcdir)/autom4te.cache \
 	$(srcdir)/configure \
 	`find "$(srcdir)" -type f -name Makefile.in -print`
+
+if WITH_CLANG_FORMAT
+ALL_SOURCE_FILES = $(wildcard \
+	$(top_srcdir)/src/*.c \
+	$(top_srcdir)/src/*.cc \
+	$(top_srcdir)/src/*.cpp \
+	$(top_srcdir)/src/*.h \
+	$(top_srcdir)/src/*.hpp \
+	$(top_srcdir)/tests/*.c \
+	$(top_srcdir)/tests/*.cc \
+	$(top_srcdir)/tests/*.cpp \
+	$(top_srcdir)/tests/*.h \
+	$(top_srcdir)/tests/*.hpp \
+	$(top_srcdir)/perf/*.c \
+	$(top_srcdir)/perf/*.cc \
+	$(top_srcdir)/perf/*.cpp \
+	$(top_srcdir)/perf/*.h \
+	$(top_srcdir)/perf/*.hpp \
+	$(top_srcdir)/tools/*.c \
+	$(top_srcdir)/tools/*.cc \
+	$(top_srcdir)/tools/*.cpp \
+	$(top_srcdir)/tools/*.h \
+	$(top_srcdir)/tools/*.hpp \
+	$(top_srcdir)/include/*.h \
+ )
+
+# Check if any sources need to be fixed, report the filenames and an error code
+clang-format-check: $(ALL_SOURCE_FILES)
+	@FAILED=0 ; IFS=";" ; IDS="`printf '\n\b'`" ; export IFS IDS; \
+	 for FILE in $(ALL_SOURCE_FILES) ; do \
+		test -s $$FILE || continue ; \
+		$(CLANG_FORMAT) -style=file -output-replacements-xml "$$FILE" | grep "<replacement " >/dev/null && \
+		{ echo "$$FILE is not correctly formatted" >&2 ; FAILED=1; } ; \
+	 done; \
+	 if test "$$FAILED" != 0 ; then \
+		exit 1 ; \
+	 fi
+
+# Change source formatting
+clang-format: $(ALL_SOURCE_FILES)
+	$(CLANG_FORMAT) -style=file -i $(ALL_SOURCE_FILES)
+
+# Change source formatting AND report the diff
+clang-format-diff: clang-format
+	git diff $(ALL_SOURCE_FILES)
+
+else
+clang-format clang-format-check clang-format-diff:
+	@echo "Install the clang-format program, reconfigure and re-run this request"
+	@exit 1
+endif
 
 @CODE_COVERAGE_RULES@
 
