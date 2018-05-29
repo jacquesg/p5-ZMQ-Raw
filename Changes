@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.25      2018-05-29 21:48:59+02:00 Africa/Johannesburg
+
  - Update to libzmq 2dfdcaff2
  - A C++11/14 compatible compiler is now required to build libzmq
 
