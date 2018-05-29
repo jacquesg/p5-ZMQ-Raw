@@ -83,11 +83,14 @@ my @opts = (
 if ($is_osx || $is_bsd)
 {
 	push @opts,
+		'ZMQ_IOTHREAD_POLLER_USE_KQUEUE',
 		'ZMQ_USE_KQUEUE';
 }
 elsif ($is_linux)
 {
 	push @opts,
+		'ZMQ_IOTHREAD_POLLER_USE_EPOLL',
+		'ZMQ_IOTHREAD_POLLER_USE_EPOLL_CLOEXEC',
 		'ZMQ_USE_EPOLL',
 		'ZMQ_USE_EPOLL_CLOEXEC',
 		'ZMQ_HAVE_EVENTFD',
@@ -97,18 +100,33 @@ elsif ($is_linux)
 elsif ($is_solaris)
 {
 	push @opts,
+		'ZMQ_IOTHREAD_POLLER_USE_DEVPOLL',
 		'ZMQ_USE_DEVPOLL';
 }
 elsif ($is_windows)
 {
 	push @opts,
+		'ZMQ_IOTHREAD_POLLER_USE_SELECT',
 		'ZMQ_USE_SELECT';
 }
 else
 {
 	push @opts,
+		'ZMQ_IOTHREAD_POLLER_USE_POLL',
 		'ZMQ_USE_POLL 1';
 }
+
+if ($is_windows)
+{
+	push @opts,
+		'ZMQ_POLL_BASED_ON_SELECT';
+}
+else
+{
+	push @opts,
+		'ZMQ_POLL_BASED_ON_POLL';
+}
+
 
 if (($is_linux || $is_osx || $is_bsd) && !$is_gkfreebsd)
 {
