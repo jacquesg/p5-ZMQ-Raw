@@ -92,17 +92,16 @@ sub new
 		handles => [],
 		events => [],
 		promises => [],
-	};
-
-	my $obj = bless $self, $class;
-	$obj->tevent (ZMQ::Raw::Loop::Event->new ($context,
+		tevent => ZMQ::Raw::Loop::Event->new ($context,
 			on_set => sub
 			{
-				$obj->terminated (1);
+				my ($event, $loop) = @_;
+				$loop->terminated (1);
 			}
 		)
-	);
-	return $obj;
+	};
+
+	return bless $self, $class;
 }
 
 
@@ -372,12 +371,12 @@ sub _dispatch_handles
 			if ($events & ZMQ::Raw->ZMQ_POLLIN)
 			{
 				my $readable = $handle->on_readable;
-				&{$readable} ($handle) if $readable;
+				&{$readable} ($handle, $this) if $readable;
 			}
 			elsif ($events & ZMQ::Raw->ZMQ_POLLOUT)
 			{
 				my $writable = $handle->on_writable;
-				&{$writable} ($handle) if $writable;
+				&{$writable} ($handle, $this) if $writable;
 			}
 
 			return 1;
@@ -391,7 +390,7 @@ sub _dispatch_handles
 				$this->_remove_handle ($handle);
 
 				my $timeout = $handle->on_timeout;
-				&{$timeout} ($handle) if $timeout;
+				&{$timeout} ($handle, $this) if $timeout;
 
 				return 1;
 			}
@@ -416,7 +415,7 @@ sub _dispatch_events
 			$this->_remove_event ($event);
 
 			my $set = $event->on_set;
-			&{$set} ($event) if $set;
+			&{$set} ($event, $this) if $set;
 			return 1;
 		}
 
@@ -429,7 +428,7 @@ sub _dispatch_events
 				$this->_remove_event ($event);
 
 				my $timeout = $event->on_timeout;
-				&{$timeout} ($event) if $timeout;
+				&{$timeout} ($event, $this) if $timeout;
 
 				return 1;
 			}
@@ -454,7 +453,7 @@ sub _dispatch_timers
 			$this->_remove_timer ($timer);
 
 			my $timeout = $timer->on_timeout;
-			&{$timeout} ($timer) if ($timeout);
+			&{$timeout} ($timer, $this) if ($timeout);
 
 			if ($timer->timer->running())
 			{
