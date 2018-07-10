@@ -3,6 +3,7 @@ package ZMQ::Raw::Loop::Handle;
 use strict;
 use warnings;
 use Carp;
+use Scalar::Util qw/weaken/;
 
 sub CLONE_SKIP { 1 }
 
@@ -13,7 +14,6 @@ BEGIN
 	@attributes = qw/
 		handle
 		timer
-		loop
 		timeout
 		on_readable
 		on_writable
@@ -120,6 +120,21 @@ sub new
 	};
 
 	return bless $self, $class;
+}
+
+
+
+sub loop
+{
+	my ($this, $loop) = @_;
+
+	if (scalar (@_) > 1)
+	{
+		$this->{loop} = $loop;
+		weaken ($this->{loop});
+	}
+
+	return $this->{loop};
 }
 
 =for Pod::Coverage handle timer loop timeout on_readable on_writable on_timeout

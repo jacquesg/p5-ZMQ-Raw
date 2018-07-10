@@ -3,6 +3,7 @@ package ZMQ::Raw::Loop::Event;
 use strict;
 use warnings;
 use Carp;
+use Scalar::Util qw/weaken/;
 
 sub CLONE_SKIP { 1 }
 
@@ -13,7 +14,6 @@ BEGIN
 	@attributes = qw/
 		read_handle
 		write_handle
-		loop
 		timeout
 		timer
 		on_set
@@ -156,7 +156,7 @@ AGAIN:
 	goto AGAIN if (defined ($this->read_handle->recv (ZMQ::Raw->ZMQ_DONTWAIT)));
 }
 
-=for Pod::Coverage read_handle write_handle loop timeout timer on_set on_timeout
+=for Pod::Coverage read_handle write_handle timeout timer on_set on_timeout
 
 =head1 AUTHOR
 

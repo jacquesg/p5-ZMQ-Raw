@@ -200,7 +200,6 @@ sub _add_event
 {
 	my ($this, $event) = @_;
 
-	$event->loop ($this);
 	$this->poller->add ($event->read_handle, ZMQ::Raw->ZMQ_POLLIN);
 
 	if ($event->timeout)
