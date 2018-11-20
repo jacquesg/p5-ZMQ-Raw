@@ -58,7 +58,6 @@ ZMQ_ORIG_CXXFLAGS="${CXXFLAGS:-none}"
 AC_PROG_CC
 AX_CHECK_COMPILE_FLAG([-std=gnu11], [CFLAGS+=" -std=gnu11"], [AC_PROG_CC_C99])
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX_11([ext], [optional])
 AX_CODE_COVERAGE
 AM_PROG_CC_C_O
 AC_PROG_SED
@@ -75,6 +74,17 @@ LIBZMQ_CONFIG_LIBTOOL
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AX_VALGRIND_CHECK
+
+AC_ARG_ENABLE([force-CXX98-compat],
+    [AS_HELP_STRING([--enable-force-CXX98-compat], [force C++98 build [default=disabled]])])
+if test "x$enable_force_CXX98_compat" = "xyes"; then
+    AC_LANG_PUSH([C++])
+    AX_CHECK_COMPILE_FLAG([-std=gnu++98], [CXXFLAGS+=" -std=gnu++98"], [])
+    AX_CHECK_COMPILE_FLAG([-Wc++98-compat -Wc++98-compat-pedantic], [CXXFLAGS+=" -Wc++98-compat"], [])
+    AC_LANG_POP([C++])
+else
+    AX_CXX_COMPILE_STDCXX_11([ext], [optional])
+fi
 
 # Check whether to build a with debug symbols
 LIBZMQ_CHECK_ENABLE_DEBUG
@@ -155,9 +165,11 @@ libzmq_on_cygwin="no"
 libzmq_on_android="no"
 libzmq_on_linux="no"
 libzmq_on_gnu="no"
+libzmq_on_debian_kfreebsd="no"
 
 # Set some default features required by ZeroMQ code
-CPPFLAGS="-D_REENTRANT -D_THREAD_SAFE -Wno-long-long $CPPFLAGS"
+CPPFLAGS="-D_REENTRANT -D_THREAD_SAFE $CPPFLAGS"
+CXXFLAGS="-Wno-long-long $CXXFLAGS"
 
 # Will be used to add flags to pkg-config useful when apps want to statically link
 PKGCFG_LIBS_PRIVATE=""
@@ -187,7 +199,8 @@ case "${host_os}" in
         ;;
     *solaris*)
         # Define on Solaris to enable all library features
-        CPPFLAGS="-Wno-sign-compare -D_PTHREADS $CPPFLAGS"
+        CPPFLAGS="-D_PTHREADS $CPPFLAGS"
+        CXXFLAGS="-Wno-sign-compare $CXXFLAGS"
         AC_DEFINE(ZMQ_HAVE_SOLARIS, 1, [Have Solaris OS])
         AC_CHECK_LIB(socket, socket)
         AC_CHECK_LIB(nsl, gethostbyname)
@@ -207,6 +220,12 @@ case "${host_os}" in
         ;;
     *freebsd*)
         # Define on FreeBSD to enable all library features
+        case "${host_os}" in
+            # On Debian/kFreeBSD with gnu set the --version-script flag
+            kfreebsd*-gnu*)
+                libzmq_on_debian_kfreebsd="yes"
+            ;;
+        esac
         CPPFLAGS="-D__BSD_VISIBLE $CPPFLAGS"
         AC_DEFINE(ZMQ_HAVE_FREEBSD, 1, [Have FreeBSD OS])
         ;;
@@ -315,10 +334,11 @@ case "${host_os}" in
         ;;
 esac
 
-# Sun Studio does not like anonymous structures in unions
+# Sun Studio does not like anonymous structures in unions and does not have weak attribute
 if test "x$libzmq_cv_[]_AC_LANG_ABBREV[]_sun_studio_compiler" = "xyes"; then
     CXXFLAGS="${CXXFLAGS} -features=extensions"
     CFLAGS="${CFLAGS} -features=extensions"
+    CPPFLAGS="${CPPFLAGS} -DUNITY_WEAK_PRAGMA"
 fi
 
 # Checks for libraries
@@ -507,6 +527,8 @@ AM_CONDITIONAL(USE_LIBSODIUM, test "$curve_library" = "libsodium")
 AM_CONDITIONAL(USE_TWEETNACL, test "$curve_library" = "tweetnacl")
 AM_CONDITIONAL(HAVE_CURVE, test "x$curve_library" != "x")
 
+AM_CONDITIONAL(USE_WEPOLL, test "$poller" = "wepoll")
+
 # build using pgm
 have_pgm_library="no"
 
@@ -592,14 +614,14 @@ AM_CONDITIONAL(HAVE_VMCI, test "x$have_vmci_ext" != "xno")
 AC_LANG_PUSH([C++])
 
 # Check how to enable -Wall
-LIBZMQ_LANG_WALL([CPPFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_wall_flag $CPPFLAGS"])
+LIBZMQ_LANG_WALL([CXXFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_wall_flag $CXXFLAGS"])
 
 if test "x$libzmq_werror" = "xyes" -a "x$libzmq_cv_[]_AC_LANG_ABBREV[]_sun_studio_compiler" != "xyes"; then
-    LIBZMQ_LANG_WERROR([CPPFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_werror_flag $CPPFLAGS"])
+    LIBZMQ_LANG_WERROR([CXXFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_werror_flag $CXXFLAGS"])
 fi
 
 if test "x$libzmq_pedantic" = "xyes"; then
-    LIBZMQ_LANG_STRICT([CPPFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_strict_flag $CPPFLAGS"])
+    LIBZMQ_LANG_STRICT([CXXFLAGS="$libzmq_cv_[]_AC_LANG_ABBREV[]_strict_flag $CXXFLAGS"])
 fi
 AC_LANG_POP([C++])
 
@@ -609,6 +631,7 @@ AM_CONDITIONAL(ON_CYGWIN, test "x$libzmq_on_cygwin" = "xyes")
 AM_CONDITIONAL(ON_ANDROID, test "x$libzmq_on_android" = "xyes")
 AM_CONDITIONAL(ON_LINUX, test "x$libzmq_on_linux" = "xyes")
 AM_CONDITIONAL(ON_GNU, test "x$libzmq_on_gnu" = "xyes")
+AM_CONDITIONAL(ON_DEBIAN_KFREEBSD, test "x$libzmq_on_debian_kfreebsd" = "xyes")
 
 # Check for __atomic_Xxx compiler intrinsics
 AC_LANG_PUSH([C++])
@@ -796,6 +819,21 @@ if test "x$enable_libunwind" != "xno"; then
         ])
 fi
 
+AC_ARG_ENABLE([radix-tree],
+    AS_HELP_STRING([--enable-radix-tree],
+        [Use radix tree implementation to manage subscriptions [default=DRAFT]]),
+    [radix_tree=$enableval],
+    [radix_tree=$enable_drafts])
+
+AM_CONDITIONAL([ENABLE_RADIX_TREE], [test x$radix_tree != xno])
+
+if test "x$radix_tree" = "xyes"; then
+    AC_MSG_NOTICE([Using radix tree implementation to manage subscriptions])
+    AC_DEFINE(ZMQ_USE_RADIX_TREE, 1, [Use radix tree implementation to manage subscriptions])
+else
+    AC_MSG_NOTICE([Using mtree implementation to manage subscriptions])
+fi
+
 # See if clang-format is in PATH; the result unblocks the relevant recipes
 WITH_CLANG_FORMAT=""
 AS_IF([test x"$CLANG_FORMAT" = x],
@@ -813,8 +851,14 @@ AM_CONDITIONAL([WITH_CLANG_FORMAT], [$WITH_CLANG_FORMAT])
 AM_CONDITIONAL(ENABLE_STATIC, test "x$enable_static" = "xyes")
 
 # clang 6 has a warning that does not make sense on multi-platform code
+AC_LANG_PUSH([C])
 AX_CHECK_COMPILE_FLAG([-Wno-tautological-constant-compare],
-    [CFLAGS+=" -Wno-tautological-constant-compare" CXXFLAGS+=" -Wno-tautological-constant-compare"],
+    [CFLAGS+=" -Wno-tautological-constant-compare"],
+    [],
+    [-Werror])
+AC_LANG_POP([C])
+AX_CHECK_COMPILE_FLAG([-Wno-tautological-constant-compare],
+    [CXXFLAGS+=" -Wno-tautological-constant-compare"],
     [],
     [-Werror])
 

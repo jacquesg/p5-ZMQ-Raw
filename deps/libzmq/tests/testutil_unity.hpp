@@ -90,8 +90,8 @@ int test_assert_success_message_raw_errno_helper (int rc_,
 
 #define TEST_ASSERT_FAILURE_ERRNO(error_code, expr)                            \
     {                                                                          \
-        int rc = (expr);                                                       \
-        TEST_ASSERT_EQUAL_INT (-1, rc);                                        \
+        int _rc = (expr);                                                      \
+        TEST_ASSERT_EQUAL_INT (-1, _rc);                                       \
         TEST_ASSERT_EQUAL_INT (error_code, errno);                             \
     }
 
@@ -116,6 +116,32 @@ void recv_string_expect_success (void *socket_, const char *str_, int flags_)
     TEST_ASSERT_EQUAL_INT ((int) len, rc);
     if (str_)
         TEST_ASSERT_EQUAL_STRING_LEN (str_, buffer, len);
+}
+
+template <size_t SIZE>
+void send_array_expect_success (void *socket_,
+                                const uint8_t (&array_)[SIZE],
+                                int flags_)
+{
+    const int rc = zmq_send (socket_, array_, SIZE, flags_);
+    TEST_ASSERT_EQUAL_INT (static_cast<int> (SIZE), rc);
+}
+
+template <size_t SIZE>
+void recv_array_expect_success (void *socket_,
+                                const uint8_t (&array_)[SIZE],
+                                int flags_)
+{
+    char buffer[255];
+    TEST_ASSERT_LESS_OR_EQUAL_MESSAGE (sizeof (buffer), SIZE,
+                                       "recv_string_expect_success cannot be "
+                                       "used for strings longer than 255 "
+                                       "characters");
+
+    const int rc = TEST_ASSERT_SUCCESS_ERRNO (
+      zmq_recv (socket_, buffer, sizeof (buffer), flags_));
+    TEST_ASSERT_EQUAL_INT (static_cast<int> (SIZE), rc);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY (array_, buffer, SIZE);
 }
 
 // do not call from tests directly, use setup_test_context, get_test_context and teardown_test_context only

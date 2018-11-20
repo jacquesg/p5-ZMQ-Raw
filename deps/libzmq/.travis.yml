@@ -28,6 +28,19 @@ env:
 
 matrix:
   include:
+  - if: type = cron OR (branch =~ analyze$ AND type = push)
+    env: BUILD_TYPE=cmake CLANG_TIDY=/usr/bin/clang-tidy-6.0 CC=clang-6.0 CXX=clang++-6.0
+    os: linux
+    compiler: clang
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-6.0
+        packages:
+          - clang-6.0
+          - clang-tools-6.0
+          - clang-tidy-6.0
   - env: BUILD_TYPE=default CURVE=tweetnacl IPv6=ON
     os: linux
     dist: precise
@@ -94,23 +107,23 @@ matrix:
         - llvm-toolchain-trusty-5.0
       packages:
         - clang-5.0
-  - if: type = cron OR (branch =~ analyze$ AND type = push)
-    env: BUILD_TYPE=cmake CLANG_TIDY=/usr/bin/clang-tidy-6.0 CC=clang-6.0 CXX=clang++-6.0
+  - env: BUILD_TYPE=default POLLER=poll
+    os: linux
+  - env: BUILD_TYPE=default POLLER=select
+    os: linux
+  - env: CXX=clang++ BUILD_TYPE=default CURVE=libsodium GSSAPI=enabled PGM=enabled NORM=enabled FORCE_98=enabled
     os: linux
     compiler: clang
     addons:
       apt:
         sources:
-          - ubuntu-toolchain-r-test
-          - llvm-toolchain-trusty-6.0
+        - sourceline: 'deb http://download.opensuse.org/repositories/network:/messaging:/zeromq:/git-stable/xUbuntu_14.04/ ./'
+          key_url: 'http://download.opensuse.org/repositories/network:/messaging:/zeromq:/git-stable/xUbuntu_14.04/Release.key'
         packages:
-          - clang-6.0
-          - clang-tools-6.0
-          - clang-tidy-6.0
-  - env: BUILD_TYPE=default POLLER=poll
-    os: linux
-  - env: BUILD_TYPE=default POLLER=select
-    os: linux
+        - libkrb5-dev
+        - libnorm-dev
+        - libpgm-dev
+        - libsodium-dev
     
 sudo: false
 
