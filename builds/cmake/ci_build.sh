@@ -6,7 +6,7 @@ cd ../..
 
 # always install custom builds from dist
 # to make sure that `make dist` doesn't omit any files required to build & test
-if [ -z $DO_CLANG_FORMAT_CHECK -a -z $CLANG_TIDY ]; then
+if [ -z "$DO_CLANG_FORMAT_CHECK" -a -z "$CLANG_TIDY" ]; then
     ./autogen.sh
     ./configure
     make -j5 dist-gzip
@@ -51,6 +51,7 @@ CMAKE_PREFIXES=()
 MAKE_PREFIXES=()
 PARALLEL_MAKE_OPT="-j5"
 if [ -n "$CLANG_TIDY" ] ; then
+    CMAKE_OPTS+=("-DCMAKE_BUILD_TYPE=Debug") # do a debug build to avoid unused variable warnings with assertions, and to speed up build
     CMAKE_OPTS+=("-DCMAKE_CXX_CLANG_TIDY:STRING=${CLANG_TIDY}")
     if [ -n ${SONARCLOUD_BUILD_WRAPPER_PATH} ] ; then
         MAKE_PREFIXES+=("${SONARCLOUD_BUILD_WRAPPER_PATH}build-wrapper-linux-x86-64")
