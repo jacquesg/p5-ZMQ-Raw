@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.29      2019-01-17 10:44:29+00:00 Europe/London
+
  - Loop::Timer now has an on_cancel callback.
  - Update to libzmq 0761e6bb4
 
