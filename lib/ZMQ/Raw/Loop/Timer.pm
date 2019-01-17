@@ -13,6 +13,7 @@ BEGIN
 {
 	@attributes = qw/
 		timer
+		on_cancel
 		on_timeout
 	/;
 
@@ -54,6 +55,10 @@ B<WARNING>: The API of this module is unstable and may change without warning
 		{
 			print "Timed out!\n";
 			$loop->terminate();
+		},
+		on_cancel => sub
+		{
+			print "Cancelled!\n";
 		},
 	);
 
@@ -98,11 +103,17 @@ sub new
 		croak "on_timeout not a code ref";
 	}
 
+	if ($args{on_cancel} && ref ($args{on_cancel}) ne 'CODE')
+	{
+		croak "on_cancel not a code ref";
+	}
+
 	my $class = ref ($this) || $this;
 	my $self =
 	{
 		timer => $args{timer},
 		on_timeout => $args{on_timeout},
+		on_cancel => $args{on_cancel},
 	};
 
 	return bless $self, $class;
@@ -134,6 +145,11 @@ sub cancel
 	if ($this->loop)
 	{
 		$this->loop->remove ($this);
+
+		if ($this->on_cancel)
+		{
+			&{$this->on_cancel}();
+		}
 	}
 }
 
@@ -170,7 +186,7 @@ sub running
 	return $this->timer->running;
 }
 
-=for Pod::Coverage timer loop on_timeout
+=for Pod::Coverage timer loop on_cancel on_timeout
 
 =head1 AUTHOR
 
