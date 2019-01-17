@@ -42,24 +42,37 @@ void tearDown ()
     teardown_test_context ();
 }
 
-static const char *SOCKET_ADDR = "ipc:///tmp/test_rebind_ipc";
-
 void test_rebind_ipc ()
 {
+    char my_endpoint[32], random_file[16];
+    strcpy (random_file, "tmpXXXXXX");
+
+#ifdef HAVE_MKDTEMP
+    TEST_ASSERT_TRUE (mkdtemp (random_file));
+    strcat (random_file, "/ipc");
+#else
+    int fd = mkstemp (random_file);
+    TEST_ASSERT_TRUE (fd != -1);
+    close (fd);
+#endif
+
+    strcpy (my_endpoint, "ipc://");
+    strcat (my_endpoint, random_file);
+
     void *sb0 = test_context_socket (ZMQ_PUSH);
     void *sb1 = test_context_socket (ZMQ_PUSH);
 
-    TEST_ASSERT_SUCCESS_ERRNO (zmq_bind (sb0, SOCKET_ADDR));
+    TEST_ASSERT_SUCCESS_ERRNO (zmq_bind (sb0, my_endpoint));
 
     void *sc = test_context_socket (ZMQ_PULL);
-    TEST_ASSERT_SUCCESS_ERRNO (zmq_connect (sc, SOCKET_ADDR));
+    TEST_ASSERT_SUCCESS_ERRNO (zmq_connect (sc, my_endpoint));
 
     send_string_expect_success (sb0, "42", 0);
     recv_string_expect_success (sc, "42", 0);
 
     test_context_socket_close (sb0);
 
-    TEST_ASSERT_SUCCESS_ERRNO (zmq_bind (sb1, SOCKET_ADDR));
+    TEST_ASSERT_SUCCESS_ERRNO (zmq_bind (sb1, my_endpoint));
 
     send_string_expect_success (sb1, "42", 0);
     recv_string_expect_success (sc, "42", 0);
