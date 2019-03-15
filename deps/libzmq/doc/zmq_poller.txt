@@ -172,7 +172,7 @@ be called from the same thread. Otherwise, behaviour is undefined.
 
 RETURN VALUE
 ------------
-_zmq_poller_new_ always returns a valid pointer to a poller.
+_zmq_poller_new_ returns a valid pointer to a poller, or NULL in case of a failure.
 
 All functions that return an int, return -1 in case of a failure. In that case,
 zmq_errno() can be used to query the type of the error as described below.
@@ -223,6 +223,8 @@ On _zmq_poller_add_fd_, _zmq_poller_modify_fd_ and _zmq_poller_remove_fd_:
 The _fd_ specified was the retired fd.
 
 On _zmq_poller_wait_ and _zmq_poller_wait_all_:
+*ENOMEM*::
+Necessary resources could not be allocated.
 *ETERM*::
 At least one of the registered objects is a 'socket' whose associated 0MQ 
 'context' was terminated.

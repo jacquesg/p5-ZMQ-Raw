@@ -55,6 +55,8 @@ src_libzmq_la_SOURCES = \
 	src/dist.cpp \
 	src/dist.hpp \
 	src/encoder.hpp \
+	src/endpoint.hpp \
+	src/endpoint.cpp \
 	src/epoll.cpp \
 	src/epoll.hpp \
 	src/err.cpp \
@@ -194,6 +196,10 @@ src_libzmq_la_SOURCES = \
 	src/stdint.hpp \
 	src/stream.cpp \
 	src/stream.hpp \
+	src/stream_connecter_base.cpp \
+	src/stream_connecter_base.hpp \
+	src/stream_listener_base.cpp \
+	src/stream_listener_base.hpp \
 	src/stream_engine.cpp \
 	src/stream_engine.hpp \
 	src/sub.cpp \
@@ -335,7 +341,8 @@ noinst_PROGRAMS = \
 	perf/local_thr \
 	perf/remote_thr \
 	perf/inproc_lat \
-	perf/inproc_thr
+	perf/inproc_thr \
+	perf/proxy_thr
 
 perf_local_lat_LDADD = src/libzmq.la
 perf_local_lat_SOURCES = perf/local_lat.cpp
@@ -354,6 +361,9 @@ perf_inproc_lat_SOURCES = perf/inproc_lat.cpp
 
 perf_inproc_thr_LDADD = src/libzmq.la
 perf_inproc_thr_SOURCES = perf/inproc_thr.cpp
+
+perf_proxy_thr_LDADD = src/libzmq.la
+perf_proxy_thr_SOURCES = perf/proxy_thr.cpp
 
 if ENABLE_STATIC
 noinst_PROGRAMS += \
@@ -535,7 +545,8 @@ tests_test_srcfd_LDADD = src/libzmq.la ${UNITY_LIBS}
 tests_test_srcfd_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_monitor_SOURCES = tests/test_monitor.cpp
-tests_test_monitor_LDADD = src/libzmq.la
+tests_test_monitor_LDADD = src/libzmq.la ${UNITY_LIBS}
+tests_test_monitor_CPPFLAGS = ${UNITY_CPPFLAGS}
 
 tests_test_router_mandatory_SOURCES = tests/test_router_mandatory.cpp tests/testutil_unity.hpp
 tests_test_router_mandatory_LDADD = src/libzmq.la ${UNITY_LIBS}
@@ -595,6 +606,7 @@ tests_test_security_plain_LDADD = src/libzmq.la
 
 tests_test_security_zap_SOURCES = \
 	tests/test_security_zap.cpp \
+	tests/testutil_monitoring.hpp \
 	tests/testutil_security.hpp \
 	tests/testutil.hpp
 tests_test_security_zap_LDADD = src/libzmq.la
@@ -1044,9 +1056,13 @@ if !ON_LINUX
 XFAIL_TESTS += tests/test_abstract_ipc
 endif
 
+#  GNU/Hurd does not support getsockname on IPC, so ZMQ_LAST_ENDPOINT cannot be
+#  used with IPC, so the following tests will fail
 if ON_GNU
 XFAIL_TESTS += tests/test_ipc_wildcard \
 		tests/test_reqrep_ipc \
+		tests/test_pair_ipc \
+		tests/test_rebind_ipc \
 		tests/test_term_endpoint
 endif
 
@@ -1063,8 +1079,9 @@ EXTRA_DIST = \
 	src/libzmq.vers \
 	src/version.rc.in \
 	tests/CMakeLists.txt \
+        tests/test_pair_tcp_cap_net_admin.cpp \
 	unittests/CMakeLists.txt \
-	tools/curve_keygen.cpp
+        tools/curve_keygen.cpp
 
 MAINTAINERCLEANFILES = \
 	$(srcdir)/aclocal.m4 \
