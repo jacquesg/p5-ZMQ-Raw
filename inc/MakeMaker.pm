@@ -78,6 +78,7 @@ my @opts = (
 	'ZMQ_HAVE_SO_KEEPALIVE',
 	'ZMQ_HAVE_CURVE',
 	'ZMQ_USE_TWEETNACL',
+	'ZMQ_POLL_BASED_ON_POLL',
 );
 
 if ($is_osx || $is_bsd)
@@ -109,8 +110,8 @@ elsif ($is_solaris)
 elsif ($is_windows)
 {
 	push @opts,
-		'ZMQ_IOTHREAD_POLLER_USE_SELECT',
-		'ZMQ_USE_SELECT',
+		'ZMQ_IOTHREAD_POLLER_USE_EPOLL',
+		'ZMQ_USE_EPOLL',
 		'ZMQ_USE_CV_IMPL_WIN32API';
 }
 else
@@ -119,17 +120,6 @@ else
 		'ZMQ_USE_CV_IMPL_STL11',
 		'ZMQ_IOTHREAD_POLLER_USE_POLL',
 		'ZMQ_USE_POLL 1';
-}
-
-if ($is_windows)
-{
-	push @opts,
-		'ZMQ_POLL_BASED_ON_SELECT';
-}
-else
-{
-	push @opts,
-		'ZMQ_POLL_BASED_ON_POLL';
 }
 
 
