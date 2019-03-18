@@ -2,6 +2,9 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - epoll implementation is now used on Windows
+ - Update to libzmq 645df4e602
+
 0.30      2019-03-15 20:15:32+00:00 Europe/London
 
  - Timer's intervals is now atleast 10ms.
