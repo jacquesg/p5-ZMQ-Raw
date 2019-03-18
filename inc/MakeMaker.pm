@@ -161,6 +161,13 @@ else
 		'ZMQ_HAVE_WINDOWS',
 }
 
+if (!$is_solaris || $Config{osvers} eq '2.10')
+{
+	# Solaris 10 doesn't have strnlen
+	push @opts,
+		'HAVE_STRNLEN';
+}
+
 if ($is_solaris)
 {
 	push @opts,
