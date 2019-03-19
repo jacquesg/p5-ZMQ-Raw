@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.31      2019-03-19 12:38:18+00:00 Europe/London
+
  - epoll implementation is now used on Windows
  - Update to libzmq 645df4e602
 
