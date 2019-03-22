@@ -16,6 +16,7 @@ use Config;
 # compiler detection
 my $is_gcc = length($Config{gccversion});
 my $is_msvc = $Config{cc} eq 'cl' ? 1 : 0;
+my $legacy_gcc = index ($Config{gccversion}, '4.2.1') != -1 ? 1 : 0;
 
 # os detection
 my $is_solaris = ($^O =~ /(sun|solaris)/i) ? 1 : 0;
@@ -252,7 +253,7 @@ sub MY::c_o {
 	}
 
 	my $std_switch = '';
-	if ($is_gcc) {
+	if ($is_gcc && !$legacy_gcc) {
 		$std_switch = '-std=c++11'
 	}
 
