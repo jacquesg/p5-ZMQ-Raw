@@ -23,6 +23,7 @@ my $is_windows = ($^O =~ /MSWin32/i) ? 1 : 0;
 my $is_linux = ($^O =~ /linux/i) ? 1 : 0;
 my $is_osx = ($^O =~ /darwin/i) ? 1 : 0;
 my $is_bsd = ($^O =~ /bsd/i) ? 1 : 0;
+my $is_openbsd = ($^O =~ /openbsd/i) ? 1 : 0;
 my $is_gkfreebsd = ($^O =~ /gnukfreebsd/i) ? 1 : 0;
 
 my $def = '-DZMQ_CUSTOM_PLATFORM_HPP -DZMQ_STATIC -DZMQ_BUILD_DRAFT_API -D_THREAD_SAFE';
@@ -123,7 +124,7 @@ else
 }
 
 
-if (($is_linux || $is_osx || $is_bsd) && !$is_gkfreebsd)
+if ($is_linux || $is_osx || ($is_bsd && !$is_gkfreebsd && !$is_openbsd))
 {
 	push @opts,
 		'ZMQ_HAVE_TCP_KEEPCNT',
