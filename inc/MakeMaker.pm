@@ -254,7 +254,7 @@ sub MY::c_o {
 
 	my $std_switch = '';
 	if ($is_gcc && !$legacy_gcc) {
-		$std_switch = '-std=c++11'
+		$std_switch = '-std=c++0x'
 	}
 
 	my $line = qq{
