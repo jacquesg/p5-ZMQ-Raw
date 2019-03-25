@@ -2,6 +2,9 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Update to libzmq 25bb43c33a
+ - Restore NetBSD support
+
 0.32      2019-03-23 19:08:55+00:00 Europe/London
 
  - Restore OpenBSD/FreeBSD support
