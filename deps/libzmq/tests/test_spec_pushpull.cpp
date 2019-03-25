@@ -30,15 +30,10 @@
 #include "testutil.hpp"
 #include "testutil_unity.hpp"
 
-void setUp ()
-{
-    setup_test_context ();
-}
+#include <stdlib.h>
+#include <string.h>
 
-void tearDown ()
-{
-    teardown_test_context ();
-}
+SETUP_TEARDOWN_TESTCONTEXT
 
 char connect_address[MAX_SOCKET_STRING];
 

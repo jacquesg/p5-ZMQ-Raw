@@ -30,23 +30,17 @@
 #include "testutil.hpp"
 #include "testutil_unity.hpp"
 
-#include <unity.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-void setUp ()
-{
-    setup_test_context ();
-}
-
-void tearDown ()
-{
-    teardown_test_context ();
-}
-
+SETUP_TEARDOWN_TESTCONTEXT
 
 #if !defined(ZMQ_HAVE_WINDOWS)
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netdb.h>
+#include <unistd.h>
 
 int setup_socket_and_set_fd (void *zmq_socket_,
                              int af_,

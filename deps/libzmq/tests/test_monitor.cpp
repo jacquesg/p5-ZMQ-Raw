@@ -32,15 +32,10 @@
 
 #include "testutil_unity.hpp"
 
-void setUp ()
-{
-    setup_test_context ();
-}
+#include <stdlib.h>
+#include <string.h>
 
-void tearDown ()
-{
-    teardown_test_context ();
-}
+SETUP_TEARDOWN_TESTCONTEXT
 
 void test_monitor_invalid_protocol_fails ()
 {
@@ -99,7 +94,7 @@ void test_monitor_basic ()
     int event = get_monitor_event (client_mon, NULL, NULL);
     if (event == ZMQ_EVENT_CONNECT_DELAYED)
         event = get_monitor_event (client_mon, NULL, NULL);
-    assert (event == ZMQ_EVENT_CONNECTED);
+    TEST_ASSERT_EQUAL_INT (ZMQ_EVENT_CONNECTED, event);
     expect_monitor_event (client_mon, ZMQ_EVENT_HANDSHAKE_SUCCEEDED);
     event = get_monitor_event (client_mon, NULL, NULL);
     if (event == ZMQ_EVENT_DISCONNECTED) {

@@ -42,6 +42,8 @@
 #include <unistd.h>
 #endif
 
+#include <stdlib.h>
+
 static void zap_handler (void *handler_)
 {
     //  Process ZAP requests forever
@@ -56,21 +58,21 @@ static void zap_handler (void *handler_)
         char *routing_id = s_recv (handler_);
         char *mechanism = s_recv (handler_);
 
-        assert (streq (version, "1.0"));
-        assert (streq (mechanism, "NULL"));
+        TEST_ASSERT_EQUAL_STRING ("1.0", version);
+        TEST_ASSERT_EQUAL_STRING ("NULL", mechanism);
 
-        s_sendmore (handler_, version);
-        s_sendmore (handler_, sequence);
+        send_string_expect_success (handler_, version, ZMQ_SNDMORE);
+        send_string_expect_success (handler_, sequence, ZMQ_SNDMORE);
         if (streq (domain, "TEST")) {
-            s_sendmore (handler_, "200");
-            s_sendmore (handler_, "OK");
-            s_sendmore (handler_, "anonymous");
-            s_send (handler_, "");
+            send_string_expect_success (handler_, "200", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "OK", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "anonymous", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "", 0);
         } else {
-            s_sendmore (handler_, "400");
-            s_sendmore (handler_, "BAD DOMAIN");
-            s_sendmore (handler_, "");
-            s_send (handler_, "");
+            send_string_expect_success (handler_, "400", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "BAD DOMAIN", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "", ZMQ_SNDMORE);
+            send_string_expect_success (handler_, "", 0);
         }
         free (version);
         free (sequence);

@@ -42,6 +42,9 @@
 #include <unistd.h>
 #endif
 
+#include <stdlib.h>
+#include <string.h>
+
 static void zap_handler (void *zap_)
 {
     //  Process ZAP requests forever
@@ -57,22 +60,23 @@ static void zap_handler (void *zap_)
         char *username = s_recv (zap_);
         char *password = s_recv (zap_);
 
-        assert (streq (version, "1.0"));
-        assert (streq (mechanism, "PLAIN"));
-        assert (streq (routing_id, "IDENT"));
+        TEST_ASSERT_EQUAL_STRING ("1.0", version);
+        TEST_ASSERT_EQUAL_STRING ("PLAIN", mechanism);
+        TEST_ASSERT_EQUAL_STRING ("IDENT", routing_id);
 
-        s_sendmore (zap_, version);
-        s_sendmore (zap_, sequence);
+        send_string_expect_success (zap_, version, ZMQ_SNDMORE);
+        send_string_expect_success (zap_, sequence, ZMQ_SNDMORE);
         if (streq (username, "admin") && streq (password, "password")) {
-            s_sendmore (zap_, "200");
-            s_sendmore (zap_, "OK");
-            s_sendmore (zap_, "anonymous");
-            s_send (zap_, "");
+            send_string_expect_success (zap_, "200", ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "OK", ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "anonymous", ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "", 0);
         } else {
-            s_sendmore (zap_, "400");
-            s_sendmore (zap_, "Invalid username or password");
-            s_sendmore (zap_, "");
-            s_send (zap_, "");
+            send_string_expect_success (zap_, "400", ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "Invalid username or password",
+                                        ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "", ZMQ_SNDMORE);
+            send_string_expect_success (zap_, "", 0);
         }
         free (version);
         free (sequence);
@@ -83,8 +87,7 @@ static void zap_handler (void *zap_)
         free (username);
         free (password);
     }
-    int rc = zmq_close (zap_);
-    assert (rc == 0);
+    TEST_ASSERT_SUCCESS_ERRNO (zmq_close (zap_));
 }
 
 void *zap_thread;
