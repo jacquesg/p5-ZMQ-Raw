@@ -133,7 +133,7 @@ if ($is_linux || $is_osx || ($is_bsd && !$is_gkfreebsd && !$is_openbsd))
 		'ZMQ_HAVE_TCP_KEEPALIVE';
 }
 
-if ($is_linux || $is_osx || ($is_bsd && !$is_gkfreebsd && !$is_openbsd))
+if ($is_linux)
 {
 	push @opts,
 		'ZMQ_HAVE_TCP_KEEPIDLE',
