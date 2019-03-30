@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.34      2019-03-30 08:18:31+00:00 Europe/London
+
  - More BSD fixes
 
 0.33      2019-03-28 12:26:43+00:00 Europe/London
