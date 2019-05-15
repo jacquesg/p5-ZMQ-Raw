@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Update to libzmq 6b51f03377
+
 0.34      2019-03-30 08:18:31+00:00 Europe/London
 
  - More BSD fixes
