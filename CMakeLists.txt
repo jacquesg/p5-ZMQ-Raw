@@ -7,7 +7,29 @@ else()
   cmake_minimum_required(VERSION 2.8.12)
 endif()
 
-option(ENABLE_ASAN "Build with address sanitizer)" OFF)
+include(CheckIncludeFiles)
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+include(CheckLibraryExists)
+include(CheckCSourceCompiles)
+include(CheckCSourceRuns)
+include(CMakeDependentOption)
+include(CheckCXXSymbolExists)
+include(CheckTypeSize)
+include(FindThreads)
+include(GNUInstallDirs)
+include(CheckTypeSize)
+include(CMakePackageConfigHelpers)
+
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ZMQ_CMAKE_MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/builds/cmake/Modules)
+list(APPEND CMAKE_MODULE_PATH ${ZMQ_CMAKE_MODULES_DIR})
+
+include(TestZMQVersion)
+include(ZMQSourceRunChecks)
+include(ZMQSupportMacros)
+
+option(ENABLE_ASAN "Build with address sanitizer" OFF)
 if(ENABLE_ASAN)
   message(STATUS "Instrumenting with Address Sanitizer")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
@@ -22,11 +44,6 @@ if (ENABLE_INTRINSICS)
    add_definitions(-DZMQ_HAVE_ATOMIC_INTRINSICS)
 endif()
 
-list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}")
-set(ZMQ_CMAKE_MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/builds/cmake/Modules)
-list(APPEND CMAKE_MODULE_PATH ${ZMQ_CMAKE_MODULES_DIR})
-
-include(GNUInstallDirs)
 if(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
   # Find more information: https://cmake.org/Wiki/CMake_RPATH_handling
 
@@ -43,18 +60,14 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
-include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=gnu++11" COMPILER_SUPPORTS_CXX11)
 if(COMPILER_SUPPORTS_CXX11)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 endif()
-include(CheckCCompilerFlag)
 check_c_compiler_flag("-std=gnu11" COMPILER_SUPPORTS_C11)
 if(COMPILER_SUPPORTS_C11)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
 endif()
-
-include(ZMQSupportMacros)
 
 if(NOT MSVC)
   # clang 6 has a warning that does not make sense on multi-platform code
@@ -138,26 +151,19 @@ set(API_POLLER "" CACHE STRING "Choose polling system for zmq_poll(er)_*. valid 
 set(POLLER "" CACHE STRING "Choose polling system for I/O threads. valid values are
   kqueue, epoll, devpoll, pollset, poll or select [default=autodetect]")
 
-include(CheckFunctionExists)
-include(CheckTypeSize)
-
 if(NOT MSVC)
   if(POLLER STREQUAL "")
-    set(CMAKE_REQUIRED_INCLUDES sys/event.h)
-    check_function_exists(kqueue HAVE_KQUEUE)
-    set(CMAKE_REQUIRED_INCLUDES)
+    check_cxx_symbol_exists(kqueue sys/event.h HAVE_KQUEUE)
     if(HAVE_KQUEUE)
       set(POLLER "kqueue")
     endif()
   endif()
 
   if(POLLER STREQUAL "")
-    set(CMAKE_REQUIRED_INCLUDES sys/epoll.h)
-    check_function_exists(epoll_create HAVE_EPOLL)
-    set(CMAKE_REQUIRED_INCLUDES)
+    check_cxx_symbol_exists(epoll_create sys/epoll.h HAVE_EPOLL)
     if(HAVE_EPOLL)
       set(POLLER "epoll")
-      check_function_exists(epoll_create1 HAVE_EPOLL_CLOEXEC)
+      check_cxx_symbol_exists(epoll_create1 sys/epoll.h HAVE_EPOLL_CLOEXEC)
       if(HAVE_EPOLL_CLOEXEC)
         set(ZMQ_IOTHREAD_POLLER_USE_EPOLL_CLOEXEC 1)
       endif()
@@ -165,27 +171,23 @@ if(NOT MSVC)
   endif()
 
   if(POLLER STREQUAL "")
-    set(CMAKE_REQUIRED_INCLUDES sys/devpoll.h)
+    set(CMAKE_EXTRA_INCLUDE_FILES sys/devpoll.h)
     check_type_size("struct pollfd" DEVPOLL)
-    set(CMAKE_REQUIRED_INCLUDES)
+    set(CMAKE_EXTRA_INCLUDE_FILES)
     if(HAVE_DEVPOLL)
       set(POLLER "devpoll")
     endif()
   endif()
 
   if(POLLER STREQUAL "")
-    set(CMAKE_REQUIRED_INCLUDES sys/pollset.h)
-    check_function_exists(pollset_create HAVE_POLLSET)
-    set(CMAKE_REQUIRED_INCLUDES)
+    check_cxx_symbol_exists(pollset_create sys/pollset.h HAVE_POLLSET)
     if(HAVE_POLLSET)
       set(POLLER "pollset")
     endif()
   endif()
 
   if(POLLER STREQUAL "")
-    set(CMAKE_REQUIRED_INCLUDES poll.h)
-    check_function_exists(poll HAVE_POLL)
-    set(CMAKE_REQUIRED_INCLUDES)
+    check_cxx_symbol_exists(poll poll.h HAVE_POLL)
     if(HAVE_POLL)
       set(POLLER "poll")
     endif()
@@ -194,12 +196,9 @@ endif()
 
 if(POLLER STREQUAL "")
   if(WIN32)
-    set(CMAKE_REQUIRED_INCLUDES winsock2.h)
     set(HAVE_SELECT 1)
   else()
-    set(CMAKE_REQUIRED_INCLUDES sys/select.h)
-    check_function_exists(select HAVE_SELECT)
-    set(CMAKE_REQUIRED_INCLUDES)
+    check_cxx_symbol_exists(select sys/select.h HAVE_SELECT)
   endif()
   if(HAVE_SELECT)
     set(POLLER "select")
@@ -238,19 +237,6 @@ endif()
 message(STATUS "Using polling method in zmq_poll(er)_* API: ${API_POLLER}")
 string(TOUPPER ${API_POLLER} UPPER_API_POLLER)
 set(ZMQ_POLL_BASED_ON_${UPPER_API_POLLER} 1)
-
-include(TestZMQVersion)
-include(ZMQSourceRunChecks)
-include(CheckIncludeFiles)
-include(CheckLibraryExists)
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-include(CheckCSourceCompiles)
-include(CheckCSourceRuns)
-include(CMakeDependentOption)
-include(CheckCXXSymbolExists)
-include(CheckSymbolExists)
-include(FindThreads)
 
 execute_process(COMMAND getconf LEVEL1_DCACHE_LINESIZE OUTPUT_VARIABLE CACHELINE_SIZE ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(CACHELINE_SIZE STREQUAL "" OR CACHELINE_SIZE EQUAL 0 OR CACHELINE_SIZE EQUAL -1)
@@ -360,13 +346,13 @@ endif()
 if(ZMQ_HAVE_WINDOWS)
   # Cannot use check_library_exists because the symbol is always declared as char(*)(void)
   set(CMAKE_REQUIRED_LIBRARIES "ws2_32.lib")
-  check_symbol_exists(WSAStartup "winsock2.h" HAVE_WS2_32)
+  check_cxx_symbol_exists(WSAStartup "winsock2.h" HAVE_WS2_32)
 
   set(CMAKE_REQUIRED_LIBRARIES "rpcrt4.lib")
-  check_symbol_exists(UuidCreateSequential "rpc.h" HAVE_RPCRT4)
+  check_cxx_symbol_exists(UuidCreateSequential "rpc.h" HAVE_RPCRT4)
 
   set(CMAKE_REQUIRED_LIBRARIES "iphlpapi.lib")
-  check_symbol_exists(GetAdaptersAddresses "winsock2.h;iphlpapi.h" HAVE_IPHLAPI)
+  check_cxx_symbol_exists(GetAdaptersAddresses "winsock2.h;iphlpapi.h" HAVE_IPHLAPI)
 
   set(CMAKE_REQUIRED_LIBRARIES "")
   # TODO: This not the symbol we're looking for. What is the symbol?
@@ -399,28 +385,14 @@ endif()
 
 if(NOT MSVC)
   set(CMAKE_REQUIRED_LIBRARIES rt)
-  check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+  check_cxx_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
   set(CMAKE_REQUIRED_LIBRARIES)
 
-  set(CMAKE_REQUIRED_INCLUDES unistd.h)
-  check_function_exists(fork HAVE_FORK)
-  set(CMAKE_REQUIRED_INCLUDES)
-
-  set(CMAKE_REQUIRED_INCLUDES sys/time.h)
-  check_function_exists(gethrtime HAVE_GETHRTIME)
-  set(CMAKE_REQUIRED_INCLUDES)
-
-  set(CMAKE_REQUIRED_INCLUDES stdlib.h)
-  check_function_exists(mkdtemp HAVE_MKDTEMP)
-  set(CMAKE_REQUIRED_INCLUDES)
-
-  set(CMAKE_REQUIRED_INCLUDES sys/socket.h)
-  check_function_exists(accept4 HAVE_ACCEPT4)
-  set(CMAKE_REQUIRED_INCLUDES)
-
-  set(CMAKE_REQUIRED_INCLUDES string.h)
-  check_function_exists(strnlen HAVE_STRNLEN)
-  set(CMAKE_REQUIRED_INCLUDES)
+  check_cxx_symbol_exists(fork unistd.h HAVE_FORK)
+  check_cxx_symbol_exists(gethrtimei sys/time.h HAVE_GETHRTIME)
+  check_cxx_symbol_exists(mkdtemp stdlib.h HAVE_MKDTEMP)
+  check_cxx_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
+  check_cxx_symbol_exists(strnlen string.h HAVE_STRNLEN)
 endif()
 
 add_definitions(-D_REENTRANT -D_THREAD_SAFE)
@@ -516,7 +488,7 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "SunPro")
   zmq_check_cxx_flag_prepend("-features=zla")
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES "SunOS" OR CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+if(CMAKE_SYSTEM_NAME MATCHES "SunOS" OR CMAKE_SYSTEM_NAME MATCHES "NetBSD" OR CMAKE_SYSTEM_NAME MATCHES "QNX")
   message(STATUS "Checking whether atomic operations can be used")
   check_c_source_compiles(
   "\
@@ -1090,7 +1062,7 @@ if(MSVC)
   # default for all sources is to use precompiled headers
   foreach(source ${sources})
     # C and C++ can not use the same precompiled header
-    if(${soruce} MATCHES ".cpp$" AND NOT ${source} STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/src/precompiled.cpp")
+    if(${source} MATCHES ".cpp$" AND NOT ${source} STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/src/precompiled.cpp")
       set_source_files_properties(${source}
         PROPERTIES
         COMPILE_FLAGS "/Yuprecompiled.hpp"
@@ -1209,6 +1181,9 @@ else()
       add_library(libzmq-static STATIC $<TARGET_OBJECTS:objects> ${public_headers}
         ${html-docs} ${readme-docs} ${zmq-pkgconfig} ${CMAKE_CURRENT_BINARY_DIR}/version.rc)
     endif()
+    if(CMAKE_SYSTEM_NAME MATCHES "QNX")
+      target_link_libraries(libzmq-static m)
+    endif()
     set_target_properties(libzmq-static PROPERTIES
       PUBLIC_HEADER "${public_headers}"
       OUTPUT_NAME "zmq"
@@ -1287,6 +1262,10 @@ if(BUILD_STATIC)
   if(RT_LIBRARY)
     target_link_libraries(libzmq-static -lrt)
   endif()
+
+  if(CMAKE_SYSTEM_NAME MATCHES "QNX")
+    add_definitions(-DUNITY_EXCLUDE_MATH_H)
+  endif()
 endif()
 
 if(BUILD_SHARED)
@@ -1331,7 +1310,7 @@ if(BUILD_SHARED)
       target_link_libraries(benchmark_radix_tree libzmq-static)
       target_include_directories(benchmark_radix_tree
         PUBLIC
-        "${CMAKE_SOURCE_DIR}/src")
+        "${CMAKE_CURRENT_LIST_DIR}/src")
     endif()
 
   endif()
@@ -1411,8 +1390,6 @@ if(WITH_DOC)
     install(FILES ${html-docs} DESTINATION doc/zmq COMPONENT RefGuide)
   endif()
 endif()
-
-include(CMakePackageConfigHelpers)
 
 if(WIN32)
   set(ZEROMQ_CMAKECONFIG_INSTALL_DIR "CMake" CACHE STRING "install path for ZeroMQConfig.cmake")
@@ -1541,4 +1518,5 @@ if(MSVC_VERSION EQUAL 1600)
   endif()
 endif()
 
+# this cannot be moved, as it does not only contain function/macro definitions
 include(ClangFormat)
