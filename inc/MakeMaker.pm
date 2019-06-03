@@ -267,6 +267,14 @@ sub MY::c_o {
 .cpp\$(OBJ_EXT):
 	\$(CCCMD) \$(CCCDLFLAGS) "-I\$(PERL_INC)" \$(PASTHRU_DEFINE) \$(DEFINE) \$*.cpp $std_switch $out_switch\$@
 };
+
+	if ($is_gcc) {
+		# disable parallel builds
+		$line .= qq{
+
+.NOTPARALLEL:
+};
+	}
 	return $line;
 }
 
