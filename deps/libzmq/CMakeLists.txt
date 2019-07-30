@@ -221,6 +221,8 @@ else()
   message(FATAL_ERROR "Invalid polling method")
 endif()
 
+list(APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/external/sha1/sha1.c ${CMAKE_CURRENT_SOURCE_DIR}/external/sha1/sha1.h)
+
 if(POLLER STREQUAL "epoll" AND WIN32)
   message(STATUS "Including wepoll")
   list(APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/external/wepoll/wepoll.c ${CMAKE_CURRENT_SOURCE_DIR}/external/wepoll/wepoll.h)
@@ -362,9 +364,11 @@ else()
   check_cxx_symbol_exists(LOCAL_PEERCRED sys/socket.h ZMQ_HAVE_LOCAL_PEERCRED)
 endif()
 
-find_library(RT_LIBRARY rt)
-if(RT_LIBRARY)
-  set(pkg_config_libs_private "${pkg_config_libs_private} -lrt")
+if(NOT MINGW)
+  find_library(RT_LIBRARY rt)
+  if(RT_LIBRARY)
+    set(pkg_config_libs_private "${pkg_config_libs_private} -lrt")
+  endif()
 endif()
 
 find_package(Threads)
@@ -737,6 +741,7 @@ set(cxx-sources
   random.cpp
   raw_encoder.cpp
   raw_decoder.cpp
+  raw_engine.cpp
   reaper.cpp
   rep.cpp
   req.cpp
@@ -749,7 +754,7 @@ set(cxx-sources
   socks.cpp
   socks_connecter.cpp
   stream.cpp
-  stream_engine.cpp
+  stream_engine_base.cpp
   sub.cpp
   tcp.cpp
   tcp_address.cpp
@@ -778,6 +783,12 @@ set(cxx-sources
   gather.cpp
   ip_resolver.cpp
   zap_client.cpp
+  ws_connecter.cpp
+  ws_decoder.cpp
+  ws_encoder.cpp
+  ws_engine.cpp
+  ws_listener.cpp
+  zmtp_engine.cpp
   # at least for VS, the header files must also be listed
   address.hpp
   array.hpp
@@ -864,11 +875,13 @@ set(cxx-sources
   random.hpp
   raw_decoder.hpp
   raw_encoder.hpp
+  raw_engine.hpp
   reaper.hpp
   rep.hpp
   req.hpp
   router.hpp
   scatter.hpp
+  secure_allocator.hpp
   select.hpp
   server.hpp
   session_base.hpp
@@ -879,7 +892,7 @@ set(cxx-sources
   socks_connecter.hpp
   stdint.hpp
   stream.hpp
-  stream_engine.hpp
+  stream_engine_base.hpp
   stream_connecter_base.hpp
   stream_connecter_base.cpp
   stream_listener_base.hpp
@@ -908,6 +921,12 @@ set(cxx-sources
   vmci_listener.hpp
   windows.hpp
   wire.hpp
+  ws_connecter.hpp
+  ws_decoder.hpp
+  ws_encoder.hpp
+  ws_engine.hpp
+  ws_listener.hpp
+  ws_protocol.hpp
   xpub.hpp
   xsub.hpp
   ypipe.hpp
@@ -915,6 +934,7 @@ set(cxx-sources
   ypipe_conflate.hpp
   yqueue.hpp
   zap_client.hpp
+  zmtp_engine.hpp
 )
 
 if(MINGW)
@@ -1154,7 +1174,7 @@ else()
     set_target_properties(libzmq PROPERTIES
       COMPILE_DEFINITIONS "DLL_EXPORT"
       PUBLIC_HEADER "${public_headers}"
-      VERSION "5.2.2"
+      VERSION "5.2.3"
       SOVERSION "5"
       OUTPUT_NAME "zmq"
       PREFIX "lib")
@@ -1419,6 +1439,11 @@ endif()
 
 option(ENABLE_CPACK "Enables cpack rules" ON)
 if(MSVC AND ENABLE_CPACK)
+  if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    set(CMAKE_INSTALL_DEBUG_LIBRARIES_ONLY TRUE)
+    set(CMAKE_INSTALL_DEBUG_LIBRARIES TRUE)
+    set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+  endif()
   include(InstallRequiredSystemLibraries)
 
   if(CMAKE_CL_64)

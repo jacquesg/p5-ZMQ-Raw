@@ -891,10 +891,42 @@ Applicable socket types:: all
 ZMQ_SOCKS_PROXY: Set SOCKS5 proxy address
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Sets the SOCKS5 proxy address that shall be used by the socket for the TCP
-connection(s). Does not support SOCKS5 authentication. If the endpoints are
-domain names instead of addresses they shall not be resolved and they shall
-be forwarded unchanged to the SOCKS proxy service in the client connection
-request message (address type 0x03 domain name).
+connection(s). Supported authentication methods are: no authentication
+or basic authentication when setup with ZMQ_SOCKS_USERNAME. If the endpoints
+are domain names instead of addresses they shall not be resolved and they
+shall be forwarded unchanged to the SOCKS proxy service in the client
+connection request message (address type 0x03 domain name).
+
+[horizontal]
+Option value type:: character string
+Option value unit:: N/A
+Default value:: not set
+Applicable socket types:: all, when using TCP transport
+
+
+ZMQ_SOCKS_USERNAME: Set SOCKS username and select basic authentication
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sets the username for authenticated connection to the SOCKS5 proxy.
+If you set this to a non-null and non-empty value, the authentication
+method used for the SOCKS5 connection shall be basic authentication.
+In this case, use ZMQ_SOCKS_PASSWORD option in order to set the password.
+If you set this to a null value or empty value, the authentication method
+shall be no authentication, the default.
+
+[horizontal]
+Option value type:: character string
+Option value unit:: N/A
+Default value:: not set
+Applicable socket types:: all, when using TCP transport
+
+
+ZMQ_SOCKS_PASSWORD: Set SOCKS basic authentication password
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sets the password for authenticating to the SOCKS5 proxy server.
+This is used only when the SOCKS5 authentication method has been
+set to basic authentication through the ZMQ_SOCKS_USERNAME option.
+Setting this to a null value (the default) is equivalent to an
+empty password string.
 
 [horizontal]
 Option value type:: character string
@@ -1065,6 +1097,23 @@ A value of '0' is the default and subscription requests will be handled automati
 A value of '1' will change the subscription requests handling to manual, 
 with manual mode subscription requests are not added to the subscription list.
 To add subscription the user need to call setsockopt with ZMQ_SUBSCRIBE on XPUB socket.
+
+[horizontal]
+Option value type:: int
+Option value unit:: 0, 1
+Default value:: 0
+Applicable socket types:: ZMQ_XPUB
+
+
+ZMQ_XPUB_MANUAL_LAST_VALUE: change the subscription handling to manual
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This option is similar to ZMQ_XPUB_MANUAL.
+The difference is that ZMQ_XPUB_MANUAL_LAST_VALUE changes the 'XPUB' socket
+behaviour to send the first message to the last subscriber after the socket
+receives a subscription and call setsockopt with ZMQ_SUBSCRIBE on 'XPUB' socket.
+This prevents duplicated messages when using last value caching(LVC).
+
+NOTE: in DRAFT state, not yet available in stable releases.
 
 [horizontal]
 Option value type:: int
@@ -1311,6 +1360,44 @@ Option value type:: int
 Option value unit:: 0, ZMQ_NOTIFY_CONNECT, ZMQ_NOTIFY_DISCONNECT, ZMQ_NOTIFY_CONNECT | ZMQ_NOTIFY_DISCONNECT
 Default value:: 0
 Applicable socket types:: ZMQ_ROUTER
+
+
+ZMQ_IN_BATCH_SIZE: Maximal receive batch size
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sets the maximal amount of messages that can be received in a single
+'recv' system call. WARNING: this option should almost never be changed.
+The default has been chosen to offer the best compromise between latency and
+throughtput. In the vast majority of cases, changing this option will result in
+worst result if not outright breakages.
+
+Cannot be zero.
+
+NOTE: in DRAFT state, not yet available in stable releases.
+
+[horizontal]
+Option value type:: int
+Option value unit:: messages
+Default value:: 8192
+Applicable socket types:: All, when using TCP, IPC, PGM or NORM transport.
+
+
+ZMQ_OUT_BATCH_SIZE: Maximal send batch size
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sets the maximal amount of messages that can be sent in a single
+'send' system call. WARNING: this option should almost never be changed.
+The default has been chosen to offer the best compromise between latency and
+throughtput. In the vast majority of cases, changing this option will result in
+worst result if not outright breakages.
+
+Cannot be zero.
+
+NOTE: in DRAFT state, not yet available in stable releases.
+
+[horizontal]
+Option value type:: int
+Option value unit:: messages
+Default value:: 8192
+Applicable socket types:: All, when using TCP, IPC, PGM or NORM transport.
 
 
 RETURN VALUE
