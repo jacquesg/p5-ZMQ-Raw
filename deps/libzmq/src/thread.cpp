@@ -145,7 +145,7 @@ void zmq::thread_t::
 
     MY_EXCEPTION_REGISTRATION_RECORD rec;
     rec.Next = (MY_EXCEPTION_REGISTRATION_RECORD *)tib->ExceptionList;
-    rec.Handler = continue_execution;
+    rec.Handler = (void *)continue_execution;
 
     // push our handler, raise, and finally pop our handler
     tib->ExceptionList = (_EXCEPTION_REGISTRATION_RECORD *)&rec;
