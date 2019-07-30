@@ -150,10 +150,10 @@ if (!$is_windows)
 else
 {
 	push @opts,
-		'ZMQ_HAVE_WINDOWS',
+		'ZMQ_HAVE_WINDOWS';
 }
 
-if (!$is_solaris || ((split ('.', $Config{osvers}))[1] > 10))
+if (!$is_solaris || (int ((split ('.', $Config{osvers}))[1]) > 10))
 {
 	# Solaris 10 doesn't have strnlen
 	push @opts,
