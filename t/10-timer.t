@@ -87,5 +87,13 @@ is 0, $poller->wait (200);
 
 $poller->remove ($s4);
 
+my $timer4 = ZMQ::Raw::Timer->new ($ctx,
+	after => 200,
+	interval => 200,
+);
+
+is 200, $timer4->interval();
+is 300, $timer4->interval (300);
+
 done_testing;
 

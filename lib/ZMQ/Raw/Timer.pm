@@ -91,6 +91,11 @@ when the timer has elapsed.
 
 Check if the timer is running.
 
+=head2 interval( [$interval] )
+
+Get and/or adjust the timer's interval. C<$interval> should be greater
+than zero.
+
 =head1 AUTHOR
 
 Jacques Germishuys <jacquesg@striata.com>
