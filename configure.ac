@@ -12,6 +12,8 @@ AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_CONFIG_HEADERS([src/platform.hpp])
 AM_INIT_AUTOMAKE(foreign subdir-objects tar-ustar dist-zip)
+# Allow "configure --disable-maintainer-mode" to disable timestamp checking 
+AM_MAINTAINER_MODE([enable])
 
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_include([m4/ax_check_compile_flag.m4])
@@ -548,8 +550,39 @@ AM_CONDITIONAL(ENABLE_CURVE_KEYGEN, test "x$enable_curve" = "xyes" -a "x$zmq_ena
 AM_CONDITIONAL(USE_LIBSODIUM, test "$curve_library" = "libsodium")
 AM_CONDITIONAL(USE_TWEETNACL, test "$curve_library" = "tweetnacl")
 AM_CONDITIONAL(HAVE_CURVE, test "x$curve_library" != "x")
-
 AM_CONDITIONAL(USE_WEPOLL, test "$poller" = "wepoll")
+
+# Check requiring packages for WebSocket
+sha1_library=""
+
+AC_ARG_ENABLE([ws],
+    [AS_HELP_STRING([--disable-ws], [Disable WebSocket transport [default=no]])])
+
+AC_ARG_WITH([nss],
+    [AS_HELP_STRING([--with-nss], [use nss instead of built-in sha1 [default=no]])])
+
+if test "x$enable_ws" != "xno"; then
+    if test "x$with_nss" = "xyes"; then
+        PKG_CHECK_MODULES([NSS3], [nss], [
+            PKGCFG_NAMES_PRIVATE="$PKGCFG_NAMES_PRIVATE nss"
+            AC_DEFINE(ZMQ_USE_NSS, [1], [Using NSS])
+            AC_DEFINE(ZMQ_HAVE_WS, [1], [Using websocket])
+            sha1_library="nss"
+            AC_MSG_NOTICE(Using NSS)
+        ], [
+            AC_MSG_ERROR(nss is not installed. Install it, then run configure again)
+        ])
+    else
+        AC_DEFINE(ZMQ_USE_BUILTIN_SHA1, [1], [Using built-in sha1])
+        AC_DEFINE(ZMQ_HAVE_WS, [1], [Using websocket])
+        sha1_library="builtin"
+        AC_MSG_NOTICE(Using builting SHA1)
+    fi
+fi
+
+AM_CONDITIONAL(HAVE_WS, test "x$sha1_library" != "x")
+AM_CONDITIONAL(USE_NSS, test "x$sha1_library" = "xnss")
+AM_CONDITIONAL(USE_BUILTIN_SHA1, test "x$sha1_library" = "xbuiltin")
 
 # build using pgm
 have_pgm_library="no"
@@ -915,6 +948,20 @@ AX_CHECK_COMPILE_FLAG([-Wno-tautological-constant-compare],
 AC_LANG_POP([C])
 AX_CHECK_COMPILE_FLAG([-Wno-tautological-constant-compare],
     [CXXFLAGS+=" -Wno-tautological-constant-compare"],
+    [],
+    [-Werror])
+
+# LTO is enabled by default on SUSE Tumbleweed and RPM lint generates an error if
+# the flag is not used to compile archives:
+# E: lto-no-text-in-archive
+AC_LANG_PUSH([C])
+AX_CHECK_COMPILE_FLAG([-ffat-lto-objects],
+    [CFLAGS+=" -ffat-lto-objects"],
+    [],
+    [-Werror])
+AC_LANG_POP([C])
+AX_CHECK_COMPILE_FLAG([-ffat-lto-objects],
+    [CXXFLAGS+=" -ffat-lto-objects"],
     [],
     [-Werror])
 
