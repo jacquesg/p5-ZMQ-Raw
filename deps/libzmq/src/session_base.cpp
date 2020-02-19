@@ -87,6 +87,7 @@ zmq::session_base_t *zmq::session_base_t::create (class io_thread_t *io_thread_,
         case ZMQ_GATHER:
         case ZMQ_SCATTER:
         case ZMQ_DGRAM:
+        case ZMQ_PEER:
             s = new (std::nothrow)
               session_base_t (io_thread_, active_, socket_, options_, addr_);
             break;
@@ -115,6 +116,10 @@ zmq::session_base_t::session_base_t (class io_thread_t *io_thread_,
     _io_thread (io_thread_),
     _has_linger_timer (false),
     _addr (addr_)
+#ifdef ZMQ_HAVE_WSS
+    ,
+    _wss_hostname (options_.wss_hostname)
+#endif
 {
 }
 
@@ -169,7 +174,7 @@ int zmq::session_base_t::push_msg (msg_t *msg_)
         && !msg_->is_cancel ())
         return 0;
     if (_pipe && _pipe->write (msg_)) {
-        int rc = msg_->init ();
+        const int rc = msg_->init ();
         errno_assert (rc == 0);
         return 0;
     }
@@ -321,7 +326,7 @@ void zmq::session_base_t::hiccuped (pipe_t *)
     zmq_assert (false);
 }
 
-zmq::socket_base_t *zmq::session_base_t::get_socket ()
+zmq::socket_base_t *zmq::session_base_t::get_socket () const
 {
     return _socket;
 }
@@ -381,7 +386,7 @@ int zmq::session_base_t::zap_connect ()
     return 0;
 }
 
-bool zmq::session_base_t::zap_enabled ()
+bool zmq::session_base_t::zap_enabled () const
 {
     return (options.mechanism != ZMQ_NULL || !options.zap_domain.empty ());
 }
@@ -400,7 +405,7 @@ void zmq::session_base_t::process_attach (i_engine *engine_)
         int hwms[2] = {conflate ? -1 : options.rcvhwm,
                        conflate ? -1 : options.sndhwm};
         bool conflates[2] = {conflate, conflate};
-        int rc = pipepair (parents, pipes, hwms, conflates);
+        const int rc = pipepair (parents, pipes, hwms, conflates);
         errno_assert (rc == 0);
 
         //  Plug the local end of the pipe.
@@ -563,8 +568,11 @@ zmq::session_base_t::connecter_factory_entry_t
     connecter_factory_entry_t (protocol_name::ws,
                                &zmq::session_base_t::create_connecter_ws),
 #endif
-#if !defined ZMQ_HAVE_WINDOWS && !defined ZMQ_HAVE_OPENVMS                     \
-  && !defined ZMQ_HAVE_VXWORKS
+#ifdef ZMQ_HAVE_WSS
+    connecter_factory_entry_t (protocol_name::wss,
+                               &zmq::session_base_t::create_connecter_wss),
+#endif
+#if defined ZMQ_HAVE_IPC
     connecter_factory_entry_t (protocol_name::ipc,
                                &zmq::session_base_t::create_connecter_ipc),
 #endif
@@ -655,8 +663,7 @@ zmq::own_t *zmq::session_base_t::create_connecter_tipc (io_thread_t *io_thread_,
 }
 #endif
 
-#if !defined ZMQ_HAVE_WINDOWS && !defined ZMQ_HAVE_OPENVMS                     \
-  && !defined ZMQ_HAVE_VXWORKS
+#if defined ZMQ_HAVE_IPC
 zmq::own_t *zmq::session_base_t::create_connecter_ipc (io_thread_t *io_thread_,
                                                        bool wait_)
 {
@@ -689,8 +696,17 @@ zmq::own_t *zmq::session_base_t::create_connecter_tcp (io_thread_t *io_thread_,
 zmq::own_t *zmq::session_base_t::create_connecter_ws (io_thread_t *io_thread_,
                                                       bool wait_)
 {
-    return new (std::nothrow)
-      ws_connecter_t (io_thread_, this, options, _addr, wait_);
+    return new (std::nothrow) ws_connecter_t (io_thread_, this, options, _addr,
+                                              wait_, false, std::string ());
+}
+#endif
+
+#ifdef ZMQ_HAVE_WSS
+zmq::own_t *zmq::session_base_t::create_connecter_wss (io_thread_t *io_thread_,
+                                                       bool wait_)
+{
+    return new (std::nothrow) ws_connecter_t (io_thread_, this, options, _addr,
+                                              wait_, true, _wss_hostname);
 }
 #endif
 

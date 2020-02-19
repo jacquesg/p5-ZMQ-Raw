@@ -126,6 +126,8 @@ src_libzmq_la_SOURCES = \
 	src/own.hpp \
 	src/pair.cpp \
 	src/pair.hpp \
+	src/peer.cpp \
+	src/peer.hpp \
 	src/pgm_receiver.cpp \
 	src/pgm_receiver.hpp \
 	src/pgm_sender.cpp \
@@ -239,6 +241,8 @@ src_libzmq_la_SOURCES = \
 	src/v1_encoder.hpp \
 	src/v2_encoder.cpp \
 	src/v2_encoder.hpp \
+	src/v3_1_encoder.cpp \
+	src/v3_1_encoder.hpp \
 	src/v2_protocol.hpp \
 	src/vmci.cpp \
 	src/vmci.hpp \
@@ -286,6 +290,8 @@ if HAVE_WS
 src_libzmq_la_SOURCES += \
 	src/ws_address.cpp \
 	src/ws_address.hpp \
+	src/wss_address.cpp \
+	src/wss_address.hpp \
 	src/ws_connecter.cpp \
 	src/ws_connecter.hpp \
 	src/ws_decoder.cpp \
@@ -303,6 +309,12 @@ if USE_BUILTIN_SHA1
 src_libzmq_la_SOURCES += \
 	external/sha1/sha1.c \
 	external/sha1/sha1.h
+endif
+
+if HAVE_WSS
+src_libzmq_la_SOURCES += \
+	src/wss_engine.cpp \
+	src/wss_engine.hpp
 endif
 
 if ON_MINGW
@@ -336,15 +348,20 @@ if HAVE_VSCRIPT_COMPLEX
 src_libzmq_la_LDFLAGS += $(VSCRIPT_LDFLAGS),$(srcdir)/src/libzmq.vers
 endif
 
-src_libzmq_la_CPPFLAGS = $(CODE_COVERAGE_CPPFLAGS) $(LIBUNWIND_CFLAGS)
-src_libzmq_la_CFLAGS = $(CODE_COVERAGE_CFLAGS) $(LIBUNWIND_CFLAGS)
+src_libzmq_la_CPPFLAGS = $(CODE_COVERAGE_CPPFLAGS) $(LIBUNWIND_CFLAGS) $(LIBBSD_CFLAGS)
+src_libzmq_la_CFLAGS = $(CODE_COVERAGE_CFLAGS) $(LIBUNWIND_CFLAGS) $(LIBBSD_CFLAGS)
 src_libzmq_la_CXXFLAGS = @LIBZMQ_EXTRA_CXXFLAGS@ $(CODE_COVERAGE_CXXFLAGS) \
-	$(LIBUNWIND_CFLAGS)
-src_libzmq_la_LIBADD = $(CODE_COVERAGE_LDFLAGS) $(LIBUNWIND_LIBS)
+	$(LIBUNWIND_CFLAGS) $(LIBBSD_CFLAGS)
+src_libzmq_la_LIBADD = $(CODE_COVERAGE_LDFLAGS) $(LIBUNWIND_LIBS) $(LIBBSD_LIBS)
 
-if HAVE_WS
+if USE_NSS
 src_libzmq_la_CPPFLAGS += ${NSS3_CFLAGS}
 src_libzmq_la_LIBADD += ${NSS3_LIBS}
+endif
+
+if USE_GNUTLS
+src_libzmq_la_CPPFLAGS += ${GNUTLS_CFLAGS}
+src_libzmq_la_LIBADD += ${GNUTLS_LIBS}
 endif
 
 if USE_LIBSODIUM
@@ -828,10 +845,10 @@ tests_test_security_curve_SOURCES += \
 endif
 
 tests_test_security_curve_LDADD = \
-        ${TESTUTIL_LIBS} src/libzmq.la $(LIBUNWIND_LIBS)
+        ${TESTUTIL_LIBS} src/libzmq.la $(LIBUNWIND_LIBS) $(LIBBSD_LIBS)
 tests_test_security_curve_CPPFLAGS = \
         ${TESTUTIL_CPPFLAGS} \
-	${LIBUNWIND_CFLAGS}
+	${LIBUNWIND_CFLAGS}  ${LIBBSD_CFLAGS}
 
 if USE_LIBSODIUM
 tests_test_security_curve_CPPFLAGS += \
@@ -848,6 +865,14 @@ test_apps += \
 tests_test_ws_transport_SOURCES = tests/test_ws_transport.cpp
 tests_test_ws_transport_LDADD = ${TESTUTIL_LIBS} src/libzmq.la ${NSS3_LIBS}
 tests_test_ws_transport_CPPFLAGS = ${TESTUTIL_CPPFLAGS} ${NSS3_CFLAGS}
+endif
+
+if HAVE_WSS
+test_apps += \
+	tests/test_wss_transport
+tests_test_wss_transport_SOURCES = tests/test_wss_transport.cpp
+tests_test_wss_transport_LDADD = ${TESTUTIL_LIBS} src/libzmq.la ${GNUTLS_LIBS}
+tests_test_wss_transport_CPPFLAGS = ${TESTUTIL_CPPFLAGS} ${GNUTLS_CFLAGS}
 endif
 
 if !ON_MINGW
@@ -1013,7 +1038,8 @@ test_apps += tests/test_poller \
 	tests/test_dgram \
 	tests/test_app_meta \
 	tests/test_xpub_manual_last_value \
-	tests/test_router_notify
+	tests/test_router_notify \
+	tests/test_peer
 
 tests_test_poller_SOURCES = tests/test_poller.cpp
 tests_test_poller_LDADD = ${TESTUTIL_LIBS} src/libzmq.la
@@ -1054,6 +1080,10 @@ tests_test_app_meta_CPPFLAGS = ${TESTUTIL_CPPFLAGS}
 tests_test_router_notify_SOURCES = tests/test_router_notify.cpp
 tests_test_router_notify_LDADD = ${TESTUTIL_LIBS} src/libzmq.la
 tests_test_router_notify_CPPFLAGS = ${TESTUTIL_CPPFLAGS}
+
+tests_test_peer_SOURCES = tests/test_peer.cpp
+tests_test_peer_LDADD = ${TESTUTIL_LIBS} src/libzmq.la
+tests_test_peer_CPPFLAGS = ${TESTUTIL_CPPFLAGS}
 endif
 
 if ENABLE_STATIC
@@ -1064,7 +1094,8 @@ test_apps += \
 	unittests/unittest_mtrie \
 	unittests/unittest_ip_resolver \
 	unittests/unittest_udp_address \
-	unittests/unittest_radix_tree
+	unittests/unittest_radix_tree \
+	unittests/unittest_curve_encoding
 
 unittests_unittest_poller_SOURCES = unittests/unittest_poller.cpp
 unittests_unittest_poller_CPPFLAGS = -I$(top_srcdir)/src ${TESTUTIL_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
@@ -1115,6 +1146,15 @@ unittests_unittest_radix_tree_SOURCES = unittests/unittest_radix_tree.cpp
 unittests_unittest_radix_tree_CPPFLAGS = -I$(top_srcdir)/src ${TESTUTIL_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
 unittests_unittest_radix_tree_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 unittests_unittest_radix_tree_LDADD =  \
+        ${TESTUTIL_LIBS} \
+        $(top_builddir)/src/.libs/libzmq.a \
+        ${src_libzmq_la_LIBADD} \
+        $(CODE_COVERAGE_LDFLAGS)
+
+unittests_unittest_curve_encoding_SOURCES = unittests/unittest_curve_encoding.cpp
+unittests_unittest_curve_encoding_CPPFLAGS = -I$(top_srcdir)/src ${TESTUTIL_CPPFLAGS} $(CODE_COVERAGE_CPPFLAGS)
+unittests_unittest_curve_encoding_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+unittests_unittest_curve_encoding_LDADD =  \
         ${TESTUTIL_LIBS} \
         $(top_builddir)/src/.libs/libzmq.a \
         ${src_libzmq_la_LIBADD} \
