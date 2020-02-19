@@ -77,7 +77,6 @@ if ($is_windows)
 
 # generate the platform.hpp file
 my @opts = (
-	'ZMQ_HAVE_WS',
 	'ZMQ_HAVE_SO_KEEPALIVE',
 	'ZMQ_HAVE_CURVE',
 	'ZMQ_USE_TWEETNACL',
@@ -129,6 +128,7 @@ else
 if ($is_linux || $is_osx)
 {
 	push @opts,
+		'ZMQ_HAVE_STRLCPY',
 		'ZMQ_HAVE_TCP_KEEPCNT',
 		'ZMQ_HAVE_TCP_KEEPINTVL',
 		'ZMQ_HAVE_TCP_KEEPALIVE';
@@ -235,7 +235,7 @@ close $fh;
 my @cc_srcs = (glob ('deps/libzmqraw/*.cc'));
 my @cc_objs = map { substr ($_, 0, -2) . 'o' } (@cc_srcs);
 
-my @cpp_srcs = (glob ('deps/libzmq/src/*.cpp'));
+my @cpp_srcs = grep { $_ !~ /(ws_|wss_)/ } (glob ('deps/libzmq/src/*.cpp'));
 my @cpp_objs = map { substr ($_, 0, -3) . 'o' } (@cpp_srcs);
 
 my @c_srcs = (glob ('deps/libzmq/src/*.c'), glob ('deps/libzmqraw/*.c'), glob ('deps/libzmq/external/sha1/*.c'));
