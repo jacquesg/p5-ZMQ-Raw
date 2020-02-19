@@ -153,12 +153,17 @@ test_xpub_verbose
 test_mock_pub_sub
 test_proxy_hwm
 test_ws_transport
+test_wss_transport
+test_socks
+test_xpub_manual_last_value
+test_peer
 unittest_ip_resolver
 unittest_mtrie
 unittest_poller
 unittest_radix_tree
 unittest_udp_address
 unittest_ypipe
+unittests/unittest_curve_encoding
 tests/test*.log
 tests/test*.trs
 unittests/unittest*.log
@@ -201,3 +206,5 @@ zeromq-*.zip
 core
 build
 test-suite.log
+.idea/
+cmake-build-debug/

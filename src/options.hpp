@@ -286,6 +286,13 @@ struct options_t
 
     // Version of monitor events to emit
     int monitor_event_version;
+
+    //  WSS Keys
+    std::string wss_key_pem;
+    std::string wss_cert_pem;
+    std::string wss_trust_pem;
+    std::string wss_hostname;
+    bool wss_trust_system;
 };
 
 inline bool get_effective_conflate_option (const options_t &options)
@@ -297,10 +304,10 @@ inline bool get_effective_conflate_option (const options_t &options)
                || options.type == ZMQ_SUB);
 }
 
-int do_getsockopt (void *const optval_,
-                   size_t *const optvallen_,
+int do_getsockopt (void *optval_,
+                   size_t *optvallen_,
                    const void *value_,
-                   const size_t value_len_);
+                   size_t value_len_);
 
 template <typename T>
 int do_getsockopt (void *const optval_, size_t *const optvallen_, T value_)
@@ -312,17 +319,17 @@ int do_getsockopt (void *const optval_, size_t *const optvallen_, T value_)
     return do_getsockopt (optval_, optvallen_, &value_, sizeof (T));
 }
 
-int do_getsockopt (void *const optval_,
-                   size_t *const optvallen_,
+int do_getsockopt (void *optval_,
+                   size_t *optvallen_,
                    const std::string &value_);
 
-int do_setsockopt_int_as_bool_strict (const void *const optval_,
-                                      const size_t optvallen_,
-                                      bool *const out_value_);
+int do_setsockopt_int_as_bool_strict (const void *optval_,
+                                      size_t optvallen_,
+                                      bool *out_value_);
 
-int do_setsockopt_int_as_bool_relaxed (const void *const optval_,
-                                       const size_t optvallen_,
-                                       bool *const out_value_);
+int do_setsockopt_int_as_bool_relaxed (const void *optval_,
+                                       size_t optvallen_,
+                                       bool *out_value_);
 }
 
 #endif

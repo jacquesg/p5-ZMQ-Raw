@@ -38,7 +38,7 @@
 #include <crtdbg.h>
 #pragma warning(disable : 4996)
 // iphlpapi is needed for if_nametoindex (not on Windows XP)
-#if !defined ZMQ_HAVE_WINDOWS_TARGET_XP
+#if _WIN32_WINNT > _WIN32_WINNT_WINXP
 #pragma comment(lib, "iphlpapi")
 #endif
 #endif
@@ -215,7 +215,7 @@ void close_zero_linger (void *socket_)
     TEST_ASSERT_SUCCESS_ERRNO (zmq_close (socket_));
 }
 
-void setup_test_environment ()
+void setup_test_environment (int timeout_seconds_)
 {
 #if defined _WIN32
 #if defined _MSC_VER
@@ -228,10 +228,8 @@ void setup_test_environment ()
     // abort test after 121 seconds
     alarm (121);
 #else
-#if !defined ZMQ_DISABLE_TEST_TIMEOUT
-    // abort test after 60 seconds
-    alarm (60);
-#endif
+    // abort test after timeout_seconds_ seconds
+    alarm (timeout_seconds_);
 #endif
 #endif
 #if defined __MVS__
@@ -284,7 +282,8 @@ int is_ipv6_available ()
         if (rc != 0)
             ipv6 = 0;
         else {
-            rc = bind (fd, (struct sockaddr *) &test_addr, sizeof (test_addr));
+            rc = bind (fd, reinterpret_cast<struct sockaddr *> (&test_addr),
+                       sizeof (test_addr));
             if (rc != 0)
                 ipv6 = 0;
         }
@@ -342,7 +341,7 @@ int test_inet_pton (int af_, const char *src_, void *dst_)
 #endif
 }
 
-sockaddr_in bind_bsd_socket (int socket)
+sockaddr_in bind_bsd_socket (int socket_)
 {
     struct sockaddr_in saddr;
     memset (&saddr, 0, sizeof (saddr));
@@ -355,23 +354,23 @@ sockaddr_in bind_bsd_socket (int socket)
 #endif
 
     TEST_ASSERT_SUCCESS_RAW_ERRNO (
-      bind (socket, (struct sockaddr *) &saddr, sizeof (saddr)));
+      bind (socket_, (struct sockaddr *) &saddr, sizeof (saddr)));
 
 #if !defined(_WIN32_WINNT) || (_WIN32_WINNT >= 0x0600)
     socklen_t saddr_len = sizeof (saddr);
     TEST_ASSERT_SUCCESS_RAW_ERRNO (
-      getsockname (socket, (struct sockaddr *) &saddr, &saddr_len));
+      getsockname (socket_, (struct sockaddr *) &saddr, &saddr_len));
 #endif
 
     return saddr;
 }
 
-bool streq (const char *lhs, const char *rhs)
+bool streq (const char *lhs_, const char *rhs_)
 {
-    return strcmp (lhs, rhs) == 0;
+    return strcmp (lhs_, rhs_) == 0;
 }
 
-bool strneq (const char *lhs, const char *rhs)
+bool strneq (const char *lhs_, const char *rhs_)
 {
-    return strcmp (lhs, rhs) != 0;
+    return strcmp (lhs_, rhs_) != 0;
 }

@@ -56,8 +56,11 @@ In addition, _user_data_ may be specified, which is not used by the poller, but
 passed back to the caller when an event was signalled in a call to
 _zmq_poller_wait_ or _zmq_poller_wait_all_. _user_data_ may be NULL. If it is
 not NULL, it must be a valid pointer. Otherwise, behaviour is undefined.
-_zmq_poller_add_ may not be called multiple times for the same socket
-(unless _zmq_poller_remove_ has been called for that socket).
+You must only add a socket to a single poller instance once (unless 
+_zmq_poller_remove_ has been called for that socket before). You may
+add a socket to multiple poller instances, if the socket itself
+is explicitly thread-safe (Server, Client, ...). If the socket is not,
+you may invoke undefined behavior.
 
 _zmq_poller_modify_ modifies the subscribed events for a socket. It is
 legal to specify no events (i.e. 0) to disable events temporarily, and
@@ -183,6 +186,10 @@ THREAD SAFETY
 Like most other 0MQ objects, a poller is not thread-safe. All operations must
 be called from the same thread. Otherwise, behaviour is undefined.
 
+In addition to that, if you want to add a socket to multiple existing poller
+instances, the socket itself needs to be thread-safe (Server, Client, ...).
+Otherwise, behaviour is undefined. 
+
 RETURN VALUE
 ------------
 _zmq_poller_new_ returns a valid pointer to a poller, or NULL in case of a failure.
@@ -264,9 +271,9 @@ void *poller = zmq_poller_new ();
 
 zmq_poller_event_t events [2];
 /* First item refers to 0MQ socket 'socket' */
-zmq_poller_add (poller, socket, ZMQ_POLLIN, NULL);
+zmq_poller_add (poller, socket, NULL, ZMQ_POLLIN);
 /* Second item refers to standard socket 'fd' */
-zmq_poller_add_fd (poller, fd, ZMQ_POLLIN, NULL);
+zmq_poller_add_fd (poller, fd, NULL, ZMQ_POLLIN);
 /* Poll for events indefinitely */
 int rc = zmq_poller_wait_all (items, events, 2, -1);
 assert (rc >= 0);

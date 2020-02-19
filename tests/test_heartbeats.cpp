@@ -50,7 +50,7 @@ SETUP_TEARDOWN_TESTCONTEXT
 
 static int get_monitor_event (void *monitor_)
 {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 10; i++) {
         //  First frame in message contains event number and value
         zmq_msg_t msg;
         TEST_ASSERT_SUCCESS_ERRNO (zmq_msg_init (&msg));
@@ -60,8 +60,8 @@ static int get_monitor_event (void *monitor_)
         }
         TEST_ASSERT_TRUE (zmq_msg_more (&msg));
 
-        uint8_t *data = (uint8_t *) zmq_msg_data (&msg);
-        uint16_t event = *(uint16_t *) (data);
+        uint8_t *data = static_cast<uint8_t *> (zmq_msg_data (&msg));
+        uint16_t event = *reinterpret_cast<uint16_t *> (data);
 
         //  Second frame in message contains event address
         TEST_ASSERT_SUCCESS_ERRNO (zmq_msg_init (&msg));
@@ -417,7 +417,9 @@ void test_setsockopt_heartbeat_ttl_near_zero ()
 
 int main (void)
 {
-    setup_test_environment ();
+    //  The test cases are very long-running. The default timeout of 60 seconds
+    //  is not always enough.
+    setup_test_environment (90);
 
     UNITY_BEGIN ();
 
