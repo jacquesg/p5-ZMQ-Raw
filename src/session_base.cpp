@@ -523,12 +523,25 @@ void zmq::session_base_t::timer_event (int id_)
     _pipe->terminate (false);
 }
 
+void zmq::session_base_t::process_conn_failed ()
+{
+    std::string *ep = new (std::string);
+    _addr->to_string (*ep);
+    send_term_endpoint (_socket, ep);
+}
+
 void zmq::session_base_t::reconnect ()
 {
     //  For delayed connect situations, terminate the pipe
     //  and reestablish later on
-    if (_pipe && options.immediate == 1 && _addr->protocol != "pgm"
-        && _addr->protocol != "epgm" && _addr->protocol != "norm"
+    if (_pipe && options.immediate == 1
+#ifdef ZMQ_HAVE_OPENPGM
+        && _addr->protocol != protocol_name::pgm
+        && _addr->protocol != protocol_name::epgm
+#endif
+#ifdef ZMQ_HAVE_NORM
+        && _addr->protocol != protocol_name::norm
+#endif
         && _addr->protocol != protocol_name::udp) {
         _pipe->hiccup ();
         _pipe->terminate (false);
@@ -597,13 +610,13 @@ zmq::session_base_t::start_connecting_entry_t
     start_connecting_entry_t (protocol_name::udp,
                               &zmq::session_base_t::start_connecting_udp),
 #if defined ZMQ_HAVE_OPENPGM
-    start_connecting_entry_t ("pgm",
+    start_connecting_entry_t (protocol_name::pgm,
                               &zmq::session_base_t::start_connecting_pgm),
-    start_connecting_entry_t ("epgm",
+    start_connecting_entry_t (protocol_name::epgm,
                               &zmq::session_base_t::start_connecting_pgm),
 #endif
 #if defined ZMQ_HAVE_NORM
-    start_connecting_entry_t ("norm",
+    start_connecting_entry_t (protocol_name::norm,
                               &zmq::session_base_t::start_connecting_norm),
 #endif
 };
@@ -717,7 +730,7 @@ void zmq::session_base_t::start_connecting_pgm (io_thread_t *io_thread_)
                 || options.type == ZMQ_SUB || options.type == ZMQ_XSUB);
 
     //  For EPGM transport with UDP encapsulation of PGM is used.
-    bool const udp_encapsulation = _addr->protocol == "epgm";
+    bool const udp_encapsulation = _addr->protocol == protocol_name::epgm;
 
     //  At this point we'll create message pipes to the session straight
     //  away. There's no point in delaying it as no concept of 'connect'
