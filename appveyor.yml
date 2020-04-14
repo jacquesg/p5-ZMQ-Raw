@@ -7,30 +7,25 @@ install:
  - del "%SOURCES%\*.msi"
 
  # download
- - set PERL526PACKAGE=strawberry-perl-5.26.1.1-64bit-portable.zip
- - set PERL520PACKAGE=strawberry-perl-5.20.3.3-64bit-portable.zip
+ - set PERL530PACKAGE=strawberry-perl-5.30.2.1-64bit-portable.zip
+ - if not exist "%SOURCES%\%PERL530PACKAGE%" curl -fsS -o "%SOURCES%\%PERL530PACKAGE%" http://strawberryperl.com/download/5.30.2.1/%PERL530PACKAGE%
+ - set PERL530=C:\projects\perl530
 
- - if not exist "%SOURCES%\%PERL526PACKAGE%" curl -fsS -o "%SOURCES%\%PERL526PACKAGE%" http://strawberryperl.com/download/5.26.1.1/%PERL526PACKAGE%
- - if not exist "%SOURCES%\%PERL520PACKAGE%" curl -fsS -o "%SOURCES%\%PERL520PACKAGE%" http://strawberryperl.com/download/5.20.3.3/%PERL520PACKAGE%
-
- - set PERL526=C:\projects\perl526
- - set PERL520=C:\projects\perl520
-
- - 7z x "%SOURCES%\%PERL526PACKAGE%" -o"%PERL526%"
- - 7z x "%SOURCES%\%PERL520PACKAGE%" -o"%PERL520%"
+ - 7z x "%SOURCES%\%PERL530PACKAGE%" -o"%PERL530%"
 
  - set OLDPATH=%PATH%
- - set PATH=%PERL520%\perl\bin;%PERL520%\perl\site\bin;%PERL520%\c\bin;%OLDPATH%
+ - set PATH=%PERL530%\perl\bin;%PERL530%\perl\site\bin;%PERL530%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw
+ - cpanm --notest App::Ack
  - cpanm --notest Dist::Zilla Dist::Zilla::PluginBundle::Author::ALEXBIO Pod::Coverage::TrustPod
  - cpanm --quiet --notest Devel::Cover::Report::Coveralls Dist::Zilla::App::Command::cover
- - dzil authordeps --missing | cpanm --notest
- - dzil listdeps --missing | cpanm --notest
- - dzil build --in ZMQ-Raw-526
+ - dzil authordeps --missing | ack -v "inc::" | cpanm --notest --quiet
+ - dzil listdeps --missing | cpanm --notest --quiet
+ - dzil build --in ZMQ-Raw-530
 
 build_script:
- - set PATH=%PERL526%\perl\bin;%PERL526%\perl\site\bin;%PERL526%\c\bin;%OLDPATH%
- - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-526
+ - set PATH=%PERL530%\perl\bin;%PERL530%\perl\site\bin;%PERL530%\c\bin;%OLDPATH%
+ - cd C:\projects\p5-ZMQ-Raw\ZMQ-Raw-530
  - perl -V
  - perl Makefile.PL
  - gmake test
