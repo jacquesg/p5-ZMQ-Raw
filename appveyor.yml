@@ -16,9 +16,7 @@ install:
  - set OLDPATH=%PATH%
  - set PATH=%PERL530%\perl\bin;%PERL530%\perl\site\bin;%PERL530%\c\bin;%OLDPATH%
  - cd C:\projects\p5-ZMQ-Raw
- - cpanm --notest App::Ack
- - cpanm --notest Dist::Zilla Dist::Zilla::PluginBundle::Author::ALEXBIO Pod::Coverage::TrustPod
- - cpanm --quiet --notest Devel::Cover::Report::Coveralls Dist::Zilla::App::Command::cover
+ - cpanm --quiet --notest Dist::Zilla Dist::Zilla::PluginBundle::Author::ALEXBIO App::Ack
  - dzil authordeps --missing | ack -v "inc::" | cpanm --notest --quiet
  - dzil listdeps --missing | cpanm --notest --quiet
  - dzil build --in ZMQ-Raw-530
