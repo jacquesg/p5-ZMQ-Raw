@@ -62,7 +62,7 @@ class session_base_t : public own_t, public io_object_t, public i_pipe_events
     virtual void reset ();
     void flush ();
     void rollback ();
-    void engine_error (zmq::i_engine::error_reason_t reason_);
+    void engine_error (bool handshaked_, zmq::i_engine::error_reason_t reason_);
 
     //  i_pipe_events interface implementation.
     void read_activated (zmq::pipe_t *pipe_) ZMQ_FINAL;
@@ -200,6 +200,26 @@ class session_base_t : public own_t, public io_object_t, public i_pipe_events
 #endif
 
     ZMQ_NON_COPYABLE_NOR_MOVABLE (session_base_t)
+};
+
+class hello_msg_session_t ZMQ_FINAL : public session_base_t
+{
+  public:
+    hello_msg_session_t (zmq::io_thread_t *io_thread_,
+                         bool connect_,
+                         zmq::socket_base_t *socket_,
+                         const options_t &options_,
+                         address_t *addr_);
+    ~hello_msg_session_t ();
+
+    //  Overrides of the functions from session_base_t.
+    int pull_msg (msg_t *msg_);
+    void reset ();
+
+  private:
+    bool _new_pipe;
+
+    ZMQ_NON_COPYABLE_NOR_MOVABLE (hello_msg_session_t)
 };
 }
 

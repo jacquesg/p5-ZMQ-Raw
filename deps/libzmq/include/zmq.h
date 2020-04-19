@@ -678,6 +678,8 @@ ZMQ_EXPORT void zmq_threadclose (void *thread_);
 #define ZMQ_WSS_TRUST_SYSTEM 107
 #define ZMQ_ONLY_FIRST_SUBSCRIBE 108
 #define ZMQ_RECONNECT_STOP 109
+#define ZMQ_HELLO_MSG 110
+#define ZMQ_DISCONNECT_MSG 111
 
 /*  DRAFT ZMQ_RECONNECT_STOP options                                          */
 #define ZMQ_RECONNECT_STOP_CONN_REFUSED 0x1
@@ -734,6 +736,7 @@ typedef struct zmq_poller_event_t
 
 ZMQ_EXPORT void *zmq_poller_new (void);
 ZMQ_EXPORT int zmq_poller_destroy (void **poller_p);
+ZMQ_EXPORT int zmq_poller_size (void *poller);
 ZMQ_EXPORT int
 zmq_poller_add (void *poller, void *socket, void *user_data, short events);
 ZMQ_EXPORT int zmq_poller_modify (void *poller, void *socket, short events);
