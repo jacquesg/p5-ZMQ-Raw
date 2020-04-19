@@ -2,6 +2,8 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+0.38      2019-04-19 12:00:10+01:00 Europe/London
+
  - Update to libzmq d882e807d
 
 0.37      2019-10-03 10:37:10+01:00 Europe/London
