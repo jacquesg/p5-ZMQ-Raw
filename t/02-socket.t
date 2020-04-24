@@ -3,8 +3,6 @@
 use Test::More;
 use ZMQ::Raw;
 
-use File::Temp;
-
 ok (ZMQ::Raw::Socket->ZMQ_AFFINITY);
 ok (ZMQ::Raw::Socket->ZMQ_IDENTITY);
 ok (ZMQ::Raw::Socket->ZMQ_SUBSCRIBE);
@@ -251,6 +249,8 @@ $dish->join ('abc');
 $dish->leave ('abc');
 
 SKIP: {
+    require File::Temp;
+
     skip 'Does not work on Windows.', 1 if $^O eq 'MSWin32';
 
     my $dir = File::Temp::tempdir( CLEANUP => 1 );
