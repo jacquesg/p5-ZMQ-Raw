@@ -2,10 +2,12 @@ Revision history for ZMQ-Raw
 
 {{$NEXT}}
 
+ - Added support for IPC sockets (thanks, @FGasper)
+ - Update to libzmq b56195e99
+
 0.38      2019-04-19 12:00:10+01:00 Europe/London
 
  - Update to libzmq d882e807d
- - Added support for IPC sockets (thanks, @FGasper)
 
 0.37      2019-10-03 10:37:10+01:00 Europe/London
 
