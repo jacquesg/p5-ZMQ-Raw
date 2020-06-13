@@ -209,7 +209,7 @@ void test_null_poller_pointers_wait_all_indirect ()
 void test_null_poller_pointer_poller_fd ()
 {
     void *null_poller = NULL;
-    zmq_fd_t fd;
+    fd_t fd;
     TEST_ASSERT_FAILURE_ERRNO (EFAULT, zmq_poller_fd (&null_poller, &fd));
 }
 
@@ -285,7 +285,7 @@ void test_call_poller_fd_no_signaler ()
     TEST_ASSERT_SUCCESS_ERRNO (
       zmq_poller_add (poller, socket, NULL, ZMQ_POLLIN));
 
-    zmq_fd_t fd;
+    fd_t fd;
     TEST_ASSERT_FAILURE_ERRNO (EINVAL, zmq_poller_fd (poller, &fd));
 
     TEST_ASSERT_SUCCESS_ERRNO (zmq_poller_destroy (&poller));
@@ -303,7 +303,7 @@ void test_call_poller_fd ()
     TEST_ASSERT_SUCCESS_ERRNO (
       zmq_poller_add (poller, socket, NULL, ZMQ_POLLIN));
 
-    zmq_fd_t fd;
+    fd_t fd;
     TEST_ASSERT_SUCCESS_ERRNO (zmq_poller_fd (poller, &fd));
 
     TEST_ASSERT_SUCCESS_ERRNO (zmq_poller_destroy (&poller));
@@ -686,6 +686,9 @@ void test_poll_client_server ()
     TEST_ASSERT_SUCCESS_ERRNO (zmq_poller_wait (poller, &event, 500));
     TEST_ASSERT_EQUAL_PTR (server, event.socket);
     TEST_ASSERT_NULL (event.user_data);
+#ifndef _WIN32
+    TEST_ASSERT (event.fd == -1);
+#endif
     recv_string_expect_success (server, client_server_msg, 0);
 
     //  Polling on pollout
@@ -694,6 +697,9 @@ void test_poll_client_server ()
     TEST_ASSERT_SUCCESS_ERRNO (zmq_poller_wait (poller, &event, 0));
     TEST_ASSERT_EQUAL_PTR (server, event.socket);
     TEST_ASSERT_NULL (event.user_data);
+#ifndef _WIN32
+    TEST_ASSERT (event.fd == -1);
+#endif
     TEST_ASSERT_EQUAL_INT (ZMQ_POLLOUT, event.events);
 
     //  Stop polling server

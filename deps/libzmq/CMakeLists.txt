@@ -31,6 +31,12 @@ include(ZMQSupportMacros)
 
 find_package(PkgConfig)
 
+# Set lists to empty beforehand as to not accidentally take values from parent
+set(sources)
+set(cxx-sources)
+set(html-docs)
+set(target_outputs)
+
 option(ENABLE_ASAN "Build with address sanitizer" OFF)
 if(ENABLE_ASAN)
   message(STATUS "Instrumenting with Address Sanitizer")
@@ -39,6 +45,25 @@ if(ENABLE_ASAN)
       "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope -fno-omit-frame-pointer")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope")
+endif()
+
+# NOTE: Running libzmq under TSAN doesn't make much sense -- synchronization in libzmq is to some extent
+# handled by the code "knowing" what threads are allowed to do, rather than by enforcing those
+# restrictions, so TSAN generates a lot of (presumably) false positives from libzmq.
+# The settings below are intended to enable libzmq to be built with minimal support for TSAN
+# such that it can be used along with other code that is also built with TSAN.
+option(ENABLE_TSAN "Build with thread sanitizer" OFF)
+if(ENABLE_TSAN)
+  message(STATUS "Instrumenting with Thread Sanitizer")
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  set(TSAN_FLAGS "-fno-omit-frame-pointer -fsanitize=thread")
+  set(TSAN_CCFLAGS "${TSAN_CCFLAGS} -mllvm -tsan-instrument-memory-accesses=0")
+  set(TSAN_CCFLAGS "${TSAN_CCFLAGS} -mllvm -tsan-instrument-atomics=0")
+  set(TSAN_CCFLAGS "${TSAN_CCFLAGS} -mllvm -tsan-instrument-func-entry-exit=1")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TSAN_FLAGS} ${TSAN_CCFLAGS} -fPIE")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TSAN_FLAGS} ${TSAN_CCFLAGS} -fPIE")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${TSAN_FLAGS} -pie -Qunused-arguments")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${TSAN_FLAGS} -pie -Qunused-arguments")
 endif()
 
 option(ENABLE_INTRINSICS "Build using compiler intrinsics for atomic ops" OFF)
@@ -68,15 +93,20 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
 endif()
 
 if (NOT MSVC)
-  check_cxx_compiler_flag("-std=gnu++11" COMPILER_SUPPORTS_CXX11)
-  if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+  if(NOT CMAKE_CXX_FLAGS MATCHES "-std=")
+    # use C++11 by default if supported
+    check_cxx_compiler_flag("-std=gnu++11" COMPILER_SUPPORTS_CXX11)
+    if(COMPILER_SUPPORTS_CXX11)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+    endif()
   endif()
-  check_c_compiler_flag("-std=gnu11" COMPILER_SUPPORTS_C11)
-  if(COMPILER_SUPPORTS_C11)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
-  else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+  if(NOT CMAKE_C_FLAGS MATCHES "-std=")
+    check_c_compiler_flag("-std=gnu11" COMPILER_SUPPORTS_C11)
+    if(COMPILER_SUPPORTS_C11)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
+    else()
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+    endif()
   endif()
 
   # clang 6 has a warning that does not make sense on multi-platform code
@@ -95,6 +125,7 @@ set(pkg_config_libs_private "")
 set(pkg_config_names_private "")
 
 option(WITH_OPENPGM "Build with support for OpenPGM" OFF)
+option(WITH_NORM "Build with support for NORM" OFF)
 option(WITH_VMCI "Build with support for VMware VMCI socket" OFF)
 
 if(APPLE)
@@ -844,6 +875,7 @@ endif()
 set(cxx-sources
     precompiled.cpp
     address.cpp
+    channel.cpp
     client.cpp
     clock.cpp
     ctx.cpp
@@ -947,6 +979,7 @@ set(cxx-sources
     atomic_counter.hpp
     atomic_ptr.hpp
     blob.hpp
+    channel.hpp
     client.hpp
     clock.hpp
     command.hpp
@@ -1126,6 +1159,16 @@ if(WITH_OPENPGM)
   include_directories(${OPENPGM_INCLUDE_DIRS})
   link_directories(${OPENPGM_LIBRARY_DIRS})
   set(OPTIONAL_LIBRARIES ${OPENPGM_LIBRARIES})
+endif()
+
+if(WITH_NORM)
+  find_package(norm)
+    if(norm_FOUND)
+      message(STATUS "Building with NORM")
+      set(ZMQ_HAVE_NORM 1)
+    else()
+      message(FATAL_ERROR "NORM not found")
+    endif()
 endif()
 
 if(WITH_VMCI)
@@ -1390,6 +1433,10 @@ if(BUILD_SHARED)
   if(RT_LIBRARY)
     target_link_libraries(libzmq -lrt)
   endif()
+
+  if(norm_FOUND)
+      target_link_libraries(libzmq norm::norm)
+  endif()
 endif()
 
 if(BUILD_STATIC)
@@ -1434,6 +1481,10 @@ if(BUILD_STATIC)
 
   if(CMAKE_SYSTEM_NAME MATCHES "QNX")
     add_definitions(-DUNITY_EXCLUDE_MATH_H)
+  endif()
+
+  if(norm_FOUND)
+      target_link_libraries(libzmq-static norm::norm)
   endif()
 endif()
 
@@ -1719,7 +1770,10 @@ if(MSVC_VERSION EQUAL 1600)
 endif()
 
 # this cannot be moved, as it does not only contain function/macro definitions
-include(ClangFormat)
+option(ENABLE_CLANG "Include Clang" ON)
+if (ENABLE_CLANG)
+  include(ClangFormat)
+endif()
 
 # fixes https://github.com/zeromq/libzmq/issues/3776 The problem is, both libzmq-static libzmq try to use/generate
 # precompiled.pch at the same time Add a dependency, so they run in order and so they dont get in each others way TODO

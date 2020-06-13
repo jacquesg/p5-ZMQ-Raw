@@ -75,11 +75,14 @@ set(tests
     test_mock_pub_sub)
 
 if(NOT WIN32)
-  list(APPEND tests test_security_gssapi test_socks)
+  list(APPEND tests test_security_gssapi test_socks test_connect_null_fuzzer test_bind_null_fuzzer test_connect_fuzzer test_bind_fuzzer)
 endif()
 
 if(ZMQ_HAVE_CURVE)
   list(APPEND tests test_security_curve)
+  if(NOT WIN32)
+    list(APPEND tests test_connect_curve_fuzzer test_bind_curve_fuzzer test_z85_decode_fuzzer)
+  endif()
 endif()
 
 option(ENABLE_CAPSH "Run tests that require sudo and capsh (for cap_net_admin)" OFF)
@@ -153,7 +156,11 @@ if(ENABLE_DRAFTS)
     test_xpub_manual_last_value
     test_peer
     test_reconnect_options
-    test_msg_init)
+    test_msg_init
+    test_channel
+    test_hello_msg
+    test_disconnect_msg
+  )
 endif()
 
 if(ZMQ_HAVE_WS)
