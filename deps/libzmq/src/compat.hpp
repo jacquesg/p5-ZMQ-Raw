@@ -27,64 +27,47 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef ZMQ_USE_FUZZING_ENGINE
-#include <fuzzer/FuzzedDataProvider.h>
+#ifndef __ZMQ_COMPAT_HPP_INCLUDED__
+#define __ZMQ_COMPAT_HPP_INCLUDED__
+
+#include "precompiled.hpp"
+#include <string.h>
+
+#ifdef ZMQ_HAVE_WINDOWS
+#define strcasecmp _stricmp
+#define strtok_r strtok_s
+#else
+#ifdef ZMQ_HAVE_LIBBSD
+#include <bsd/string.h>
+#elif !defined(ZMQ_HAVE_STRLCPY)
+static inline size_t
+strlcpy (char *dest_, const char *src_, const size_t dest_size_)
+{
+    size_t remain = dest_size_;
+    for (; remain && *src_; --remain, ++src_, ++dest_) {
+        *dest_ = *src_;
+    }
+    return dest_size_ - remain;
+}
+#endif
+template <size_t size>
+static inline int strcpy_s (char (&dest_)[size], const char *const src_)
+{
+    const size_t res = strlcpy (dest_, src_, size);
+    return res >= size ? ERANGE : 0;
+}
 #endif
 
-#include <string>
-#include <stdlib.h>
-
-#include "testutil.hpp"
-#include "testutil_unity.hpp"
-
-extern "C" int LLVMFuzzerTestOneInput (const uint8_t *data, size_t size)
+#ifndef HAVE_STRNLEN
+static inline size_t strnlen (const char *s, size_t len)
 {
-    uint8_t *secret_key;
-
-    if (size < 5)
-        return 0;
-
-    // As per API definition, input must be divisible by 5, so truncate it if it's not
-    size -= size % 5;
-    // As per API definition, the destination must be at least 0.8 times the input data
-    TEST_ASSERT_NOT_NULL (secret_key = (uint8_t *) malloc (size * 4 / 5));
-
-    std::string z85_secret_key (reinterpret_cast<const char *> (data), size);
-    zmq_z85_decode (secret_key, z85_secret_key.c_str ());
-
-    free (secret_key);
-
-    return 0;
-}
-
-#ifndef ZMQ_USE_FUZZING_ENGINE
-void test_z85_decode_fuzzer ()
-{
-    uint8_t **data;
-    size_t *len, num_cases = 0;
-    if (fuzzer_corpus_encode (
-          "tests/libzmq-fuzz-corpora/test_z85_decode_fuzzer_seed_corpus", &data,
-          &len, &num_cases)
-        != 0)
-        exit (77);
-
-    while (num_cases-- > 0) {
-        TEST_ASSERT_SUCCESS_ERRNO (
-          LLVMFuzzerTestOneInput (data[num_cases], len[num_cases]));
-        free (data[num_cases]);
+    for (size_t i = 0; i < len; i++) {
+        if (s[i] == '\0')
+            return i + 1;
     }
 
-    free (data);
-    free (len);
+    return len;
 }
+#endif
 
-int main (int argc, char **argv)
-{
-    setup_test_environment ();
-
-    UNITY_BEGIN ();
-    RUN_TEST (test_z85_decode_fuzzer);
-
-    return UNITY_END ();
-}
 #endif
